@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { cerrarSesion } from "@/app/login/acciones";
-import { EJES, SLUGS, nombreTipo, slugDeTipo, type SlugEje } from "@/lib/ejes";
+import { EJES, SLUGS, nombreTipo, type SlugEje } from "@/lib/ejes";
+import { rutaPersona } from "@/lib/rutas";
 import { crearClienteNavegador } from "@/lib/supabase/client";
 import type { ResultadoBusqueda } from "@/lib/tipos";
 import { IconoBuscar } from "./ui";
@@ -52,9 +53,10 @@ function Pestanas({ conteos }: { conteos: Record<SlugEje, number> }) {
 }
 
 const hrefDe = (p: ResultadoBusqueda) =>
-  p.referente_id && p.referente_tipo
-    ? `/${slugDeTipo(p.referente_tipo)}?referente=${p.referente_id}&persona=${p.id}`
-    : `/lideres?persona=${p.id}`;
+  rutaPersona(
+    p.id,
+    p.referente_id && p.referente_tipo ? { id: p.referente_id, tipo: p.referente_tipo } : null,
+  );
 
 // Buscador global: nombre o últimos dígitos de cédula. Atajo "/".
 function Buscador() {

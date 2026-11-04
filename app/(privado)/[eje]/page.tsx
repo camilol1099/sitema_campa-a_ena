@@ -13,6 +13,7 @@ import {
   todosLosReferentes,
 } from "@/lib/datos";
 import { EJES, esSlugEje, esUuid } from "@/lib/ejes";
+import { cuantosCumplenMeta } from "@/lib/fichas";
 import { fmt } from "@/lib/formato";
 
 // Espera los datos de la sesión antes de mostrarse (app privada, un solo usuario).
@@ -46,7 +47,7 @@ export default async function PaginaEje({ params, searchParams }: PageProps<"/[e
 
   const delEje = referentes.filter((r) => r.tipo === conf.tipo);
   const refDelEje = ref && ref.tipo === conf.tipo ? ref : null;
-  const cumplen = delEje.filter((r) => r.meta_personas && r.total_personas >= r.meta_personas).length;
+  const cumplen = cuantosCumplenMeta(delEje);
   const paso = per ? 3 : refDelEje ? 2 : 1;
 
   const kpis = [

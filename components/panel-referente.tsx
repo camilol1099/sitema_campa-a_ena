@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { alertasPersona } from "@/lib/alertas";
-import { CAMPOS_TIPO, EJES, nombreTipo, type SlugEje } from "@/lib/ejes";
+import { EJES, nombreTipo, type SlugEje } from "@/lib/ejes";
+import { coordinadoresDistintos, datosFichaReferente, porcentajeMeta } from "@/lib/fichas";
+import { rutaPersona } from "@/lib/rutas";
 import type { PersonaDeReferente, ReferenteFicha, ReferenteResumen } from "@/lib/tipos";
 import { BotonEditarReferente, BotonVincularPersona } from "./botones-acciones";
 import Pendiente from "./pendiente";
@@ -28,17 +30,9 @@ export default function PanelReferente({
   }
 
   const n = personas.length;
-  const coordinadores = [...new Set(personas.map((p) => p.coordinador).filter(Boolean))] as string[];
-
+  const coordinadores = coordinadoresDistintos(personas);
   // Tres datos según el eje. Nunca dirección ni teléfono.
-  const datos: [string, string | null][] =
-    r.tipo === "lider"
-      ? [
-          ["Barrio", r.barrio],
-          ["Estado", r.estado === "activo" ? "Activo" : "Inactivo"],
-          ["Coordinadores", coordinadores.length ? String(coordinadores.length) : null],
-        ]
-      : CAMPOS_TIPO[r.tipo].map(({ campo, etiqueta }) => [etiqueta, r[campo]]);
+  const datos = datosFichaReferente(r, coordinadores);
 
   return (
     <div className="panel-cuerpo aparecer">
@@ -82,7 +76,7 @@ export default function PanelReferente({
             <div className="mt-1.5 h-2 overflow-hidden rounded bg-rule">
               <i
                 className="block h-full rounded bg-hue transition-[width] duration-500"
-                style={{ width: `${Math.min(100, (n / r.meta_personas) * 100)}%` }}
+                style={{ width: `${porcentajeMeta(n, r.meta_personas)}%` }}
               />
             </div>
           ) : null}
@@ -105,7 +99,7 @@ export default function PanelReferente({
             return (
               <li key={p.id}>
                 <Link
-                  href={`/${eje}?referente=${r.id}&persona=${p.id}`}
+                  href={rutaPersona(p.id, r)}
                   aria-current={sel ? "true" : undefined}
                   className={`relative grid grid-cols-[minmax(0,1fr)_auto] gap-x-2.5 gap-y-0.5 rounded-md border px-2.5 py-2 transition duration-150 ${
                     sel ? "border-control bg-active" : "border-transparent hover:border-rule hover:bg-raised motion-safe:hover:translate-x-0.5"

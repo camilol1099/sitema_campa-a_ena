@@ -2,19 +2,10 @@
 
 import { refresh } from "next/cache";
 import { crearClienteServidor } from "@/lib/supabase/server";
-import {
-  CAMPOS_TIPO,
-  EJES,
-  VERIFICACIONES,
-  esUuid,
-  slugDeTipo,
-  type TipoReferente,
-} from "@/lib/ejes";
-import {
-  enteroOpcional,
-  textoOpcional,
-  validarCedula,
-} from "@/lib/validacion";
+import { EJES, esUuid, type TipoReferente } from "@/lib/ejes";
+import { leerPersona, leerReferente } from "@/lib/formularios";
+import { rutaPersona, rutaReferente } from "@/lib/rutas";
+import { textoOpcional } from "@/lib/validacion";
 
 // Cada cambio pasa por la sesión del usuario (RLS) y los triggers de la base
 // lo registran en `historial`.
@@ -46,9 +37,7 @@ async function hrefPersona(supabase: Supabase, personaId: string) {
     .order("fecha_vinculo")
     .limit(1)
     .maybeSingle<{ referente: { id: string; tipo: TipoReferente } }>();
-  if (!data) return `/lideres?persona=${personaId}`;
-  const { id, tipo } = data.referente;
-  return `/${slugDeTipo(tipo)}?referente=${id}&persona=${personaId}`;
+  return rutaPersona(personaId, data?.referente);
 }
 
 async function personaConCedula(
@@ -74,7 +63,7 @@ async function referenteConCedula(
   if (!data) return null;
   return {
     nombre: data.nombre,
-    href: `/${slugDeTipo(data.tipo)}?referente=${data.id}`,
+    href: rutaReferente(data.tipo, data.id),
   };
 }
 
@@ -104,15 +93,7 @@ export async function guardarReferente(formData: FormData): Promise<Resultado> {
     return { ok: false, mensaje: ERROR_GENERAL };
   }
 
-  const errores: Record<string, string> = {};
-  const nombre = textoOpcional(formData.get("nombre"));
-  if (!nombre) errores.nombre = "Escribe el nombre.";
-  const cedula = textoOpcional(formData.get("cedula"));
-  const errCedula = validarCedula(cedula);
-  if (errCedula) errores.cedula = errCedula;
-  const meta = enteroOpcional(formData.get("meta_personas"), 0);
-  if (meta.error) errores.meta_personas = meta.error;
-  const estado = formData.get("estado") === "inactivo" ? "inactivo" : "activo";
+  const { errores, fila, cedula } = leerReferente(formData, tipo);
   if (Object.keys(errores).length) return { ok: false, errores };
 
   const supabase = await crearClienteServidor();
@@ -126,22 +107,6 @@ export async function guardarReferente(formData: FormData): Promise<Resultado> {
         existente,
       };
     }
-  }
-
-  const fila: Record<string, string | number | null> = {
-    tipo,
-    nombre,
-    cedula,
-    celular: textoOpcional(formData.get("celular")),
-    direccion: textoOpcional(formData.get("direccion")),
-    barrio: textoOpcional(formData.get("barrio")),
-    municipio: textoOpcional(formData.get("municipio")),
-    estado,
-    meta_personas: meta.valor,
-    notas: textoOpcional(formData.get("notas")),
-  };
-  for (const { campo } of CAMPOS_TIPO[tipo]) {
-    fila[campo] = textoOpcional(formData.get(campo));
   }
 
   const r = id
@@ -159,7 +124,7 @@ export async function guardarReferente(formData: FormData): Promise<Resultado> {
   }
 
   refresh();
-  return { ok: true, href: `/${slugDeTipo(tipo)}?referente=${r.data.id}` };
+  return { ok: true, href: rutaReferente(tipo, r.data.id) };
 }
 
 // ---------------------------------------------------------------------------
@@ -169,31 +134,8 @@ export async function guardarPersona(formData: FormData): Promise<Resultado> {
   const id = textoOpcional(formData.get("id"));
   if (id !== null && !esUuid(id)) return { ok: false, mensaje: ERROR_GENERAL };
 
-  const errores: Record<string, string> = {};
-  const nombre = textoOpcional(formData.get("nombre"));
-  if (!nombre) errores.nombre = "Escribe el nombre.";
-  const cedula = textoOpcional(formData.get("cedula"));
-  const errCedula = validarCedula(cedula);
-  if (errCedula) errores.cedula = errCedula;
-  const mesa = enteroOpcional(formData.get("mesa"), 1);
-  if (mesa.error) errores.mesa = mesa.error;
-
-  const verificacion = textoOpcional(formData.get("municipio_verificacion"));
-  if (verificacion && !(VERIFICACIONES as readonly string[]).includes(verificacion)) {
-    errores.municipio_verificacion = "Elige una opción de la lista.";
-  }
-
-  const autorizo = formData.get("autorizacion_datos") === "on";
-  const fechaAut = textoOpcional(formData.get("fecha_autorizacion"));
-  if (fechaAut && !/^\d{4}-\d{2}-\d{2}$/.test(fechaAut)) {
-    errores.fecha_autorizacion = "Fecha no válida.";
-  }
-
-  // Al crear, se puede vincular de una vez a un referente.
-  const referenteId = id ? null : textoOpcional(formData.get("referente_id"));
-  if (referenteId !== null && !esUuid(referenteId)) {
-    errores.referente_id = "Elige un referente de la lista.";
-  }
+  const { errores, fila, referenteId, coordinador } = leerPersona(formData, id !== null);
+  const cedula = fila.cedula;
   if (Object.keys(errores).length) return { ok: false, errores };
 
   const supabase = await crearClienteServidor();
@@ -208,25 +150,6 @@ export async function guardarPersona(formData: FormData): Promise<Resultado> {
       };
     }
   }
-
-  const fila = {
-    nombre,
-    cedula,
-    celular: textoOpcional(formData.get("celular")),
-    direccion: textoOpcional(formData.get("direccion")),
-    barrio: textoOpcional(formData.get("barrio")),
-    municipio_verificacion: verificacion,
-    puesto_votacion: textoOpcional(formData.get("puesto_votacion")),
-    mesa: mesa.valor,
-    observaciones: textoOpcional(formData.get("observaciones")),
-    autorizacion_datos: autorizo,
-    // Si autorizó y no se indicó fecha, se toma la de hoy.
-    fecha_autorizacion: autorizo
-      ? fechaAut
-        ? `${fechaAut}T12:00:00-05:00`
-        : new Date().toISOString()
-      : null,
-  };
 
   const r = id
     ? await supabase.from("personas").update(fila).eq("id", id).select("id").single()
@@ -252,7 +175,7 @@ export async function guardarPersona(formData: FormData): Promise<Resultado> {
     const v = await supabase.from("vinculos").insert({
       persona_id: personaId,
       referente_id: referenteId,
-      coordinador: textoOpcional(formData.get("coordinador")),
+      coordinador,
     });
     if (v.error) {
       refresh();
@@ -316,8 +239,6 @@ export async function vincularPersona(formData: FormData): Promise<Resultado> {
   refresh();
   return {
     ok: true,
-    href: ref
-      ? `/${slugDeTipo(ref.tipo)}?referente=${referenteId}&persona=${personaId}`
-      : undefined,
+    href: ref ? rutaPersona(personaId, { id: referenteId, tipo: ref.tipo }) : undefined,
   };
 }

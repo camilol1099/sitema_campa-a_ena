@@ -3,19 +3,18 @@
 import Link from "next/link";
 import { useState } from "react";
 import { EJES, type SlugEje } from "@/lib/ejes";
+import { porcentajeMeta } from "@/lib/fichas";
+import { filtrarReferentes, type FiltroEstado } from "@/lib/filtros";
 import type { ReferenteResumen } from "@/lib/tipos";
 import Pendiente from "./pendiente";
 import { Avatar, Pildora, Vacio } from "./ui";
 
-type Filtro = "activos" | "todos" | "inactivos";
+type Filtro = FiltroEstado;
 const FILTROS: [Filtro, string][] = [
   ["activos", "Activos"],
   ["todos", "Todos"],
   ["inactivos", "Inactivos"],
 ];
-
-const sinTildes = (t: string) =>
-  t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 
 export default function ListaReferentes({
   eje,
@@ -30,11 +29,7 @@ export default function ListaReferentes({
   const [filtro, setFiltro] = useState<Filtro>("activos");
   const conf = EJES[eje];
 
-  const q = sinTildes(texto.trim());
-  const lista = referentes
-    .filter((r) => filtro === "todos" || (filtro === "activos") === (r.estado === "activo"))
-    .filter((r) => !q || sinTildes(r.nombre).includes(q))
-    .sort((a, b) => b.total_personas - a.total_personas || a.nombre.localeCompare(b.nombre));
+  const lista = filtrarReferentes(referentes, texto, filtro);
 
   return (
     <>
@@ -73,7 +68,7 @@ export default function ListaReferentes({
           <ul>
             {lista.map((r) => {
               const sel = r.id === seleccionado;
-              const pct = r.meta_personas ? Math.min(100, (r.total_personas / r.meta_personas) * 100) : 0;
+              const pct = porcentajeMeta(r.total_personas, r.meta_personas);
               const extra = r.tipo === "empresario" ? r.empresa : r.tipo === "aliado" ? r.cargo_politico : null;
               return (
                 <li key={r.id} className="border-b border-rule">

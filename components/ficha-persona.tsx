@@ -1,50 +1,12 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { nombreTipo, slugDeTipo, type SlugEje } from "@/lib/ejes";
+import { nombreTipo, type SlugEje } from "@/lib/ejes";
+import { describirCambio } from "@/lib/historial";
+import { rutaPersona } from "@/lib/rutas";
 import { fecha, fechaConHora } from "@/lib/formato";
 import type { EventoHistorial, Persona, ReferenteResumen, VinculoDePersona } from "@/lib/tipos";
 import { BotonEditarPersona, BotonVincularAReferente } from "./botones-acciones";
 import { Guion, IconoVolver, Pildora, Vacio, boton } from "./ui";
-
-const ETIQUETAS: Record<string, string> = {
-  nombre: "nombre",
-  cedula: "cédula",
-  celular: "celular",
-  direccion: "dirección",
-  barrio: "barrio",
-  municipio_verificacion: "verificación",
-  puesto_votacion: "puesto",
-  mesa: "mesa",
-  observaciones: "observaciones",
-  autorizacion_datos: "autorización",
-  fecha_autorizacion: "fecha de autorización",
-  coordinador: "coordinador",
-  activo: "estado del vínculo",
-  nota: "nota",
-  fecha_vinculo: "fecha del vínculo",
-};
-const IGNORAR = new Set(["updated_at", "updated_by", "created_at", "created_by"]);
-
-// Texto corto de cada cambio del historial.
-function describir(e: EventoHistorial, nombres: Map<string, string>) {
-  const antes = e.cambios?.antes ?? {};
-  const despues = e.cambios?.despues ?? {};
-  const refId = String(despues.referente_id ?? antes.referente_id ?? "");
-  const ref = nombres.get(refId) ?? "un referente";
-
-  if (e.tabla === "vinculos") {
-    if (e.accion === "vincular") return `Se vinculó a ${ref}`;
-    if (e.accion === "desvincular") return `Se desvinculó de ${ref}`;
-    if (antes.activo === false && despues.activo === true) return `Se volvió a vincular a ${ref}`;
-  } else if (e.accion === "crear") {
-    return "Registro creado";
-  }
-  const campos = Object.keys(despues)
-    .filter((k) => !IGNORAR.has(k) && JSON.stringify(antes[k]) !== JSON.stringify(despues[k]))
-    .map((k) => ETIQUETAS[k] ?? k);
-  const que = campos.length ? `: ${campos.join(", ")}` : "";
-  return e.tabla === "vinculos" ? `Se editó el vínculo con ${ref}${que}` : `Se editó${que}`;
-}
 
 function Bloque({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
@@ -149,7 +111,7 @@ export default function FichaPersona({
               {vinculos.map((v) => (
                 <li key={v.id} className="border-t border-rule first:border-t-0">
                   <Link
-                    href={`/${slugDeTipo(v.referente.tipo)}?referente=${v.referente.id}&persona=${p.id}`}
+                    href={rutaPersona(p.id, v.referente)}
                     className="-mx-2 flex justify-between gap-2.5 rounded-md px-2 py-2 text-[13.5px] transition hover:bg-raised"
                   >
                     <span className="min-w-0">
@@ -193,7 +155,7 @@ export default function FichaPersona({
                   <time className="num text-muted" dateTime={e.fecha}>
                     {fechaConHora(e.fecha)}
                   </time>
-                  <span>{describir(e, nombres)}</span>
+                  <span>{describirCambio(e, nombres)}</span>
                 </li>
               ))}
             </ul>

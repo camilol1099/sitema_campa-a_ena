@@ -13,8 +13,10 @@ export const EJES = {
 export type SlugEje = keyof typeof EJES;
 export const SLUGS = Object.keys(EJES) as SlugEje[];
 
+// Object.hasOwn y no `in`: `in` también acepta propiedades heredadas de todo
+// objeto ("constructor", "toString"…), y /constructor daba error 500.
 export function esSlugEje(valor: string): valor is SlugEje {
-  return valor in EJES;
+  return Object.hasOwn(EJES, valor);
 }
 
 export function slugDeTipo(tipo: TipoReferente): SlugEje {

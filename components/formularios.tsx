@@ -10,7 +10,7 @@ import {
 } from "@/app/(privado)/acciones";
 import { CAMPOS_TIPO, EJES, VERIFICACIONES, slugDeTipo, type TipoReferente } from "@/lib/ejes";
 import type { Persona, ReferenteEdicion, ReferenteResumen } from "@/lib/tipos";
-import { validarCedula } from "@/lib/validacion";
+import { erroresCedula } from "@/lib/validacion";
 import { AreaTexto, Aviso, Campo, Seccion, Seleccion, Texto } from "./campos";
 import { boton } from "./ui";
 
@@ -50,11 +50,6 @@ function useEnvio(
   return { estado, enviando, enviar, formRef, errores: estado?.errores ?? {} };
 }
 
-const validarCedulaForm = (fd: FormData) => {
-  const c = String(fd.get("cedula") ?? "").trim();
-  const err = validarCedula(c === "" ? null : c);
-  return err ? { cedula: err } : ({} as Record<string, string>);
-};
 
 // Mensaje de "ya existe": ofrece abrir el registro en vez de duplicarlo.
 function YaExiste({ r, alAbrir }: { r: Resultado | null; alAbrir: () => void }) {
@@ -113,7 +108,7 @@ export function FormReferente({
       alCerrar();
       if (!referente && r.href) router.push(r.href);
     },
-    validarCedulaForm,
+    erroresCedula,
   );
   const v = referente;
 
@@ -202,7 +197,7 @@ export function FormPersona({
       alCerrar();
       if (!persona && r.href) router.push(r.href);
     },
-    validarCedulaForm,
+    erroresCedula,
   );
   const v = persona;
   const [autorizo, setAutorizo] = useState(v?.autorizacion_datos ?? false);

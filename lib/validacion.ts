@@ -30,3 +30,9 @@ export function enteroOpcional(
   if (n < minimo) return { valor: null, error: `Debe ser ${minimo} o más.` };
   return { valor: n, error: null };
 }
+
+// Validación de la cédula antes de enviar el formulario (en el navegador).
+export function erroresCedula(formData: FormData): Record<string, string> {
+  const err = validarCedula(textoOpcional(formData.get("cedula")));
+  return err ? { cedula: err } : {};
+}
