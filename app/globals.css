@@ -1,0 +1,162 @@
+@import "tailwindcss";
+
+/* Tokens de DESIGN.md (achromatic ledger con la marca) */
+@theme inline {
+  --color-ground: #f2f5f2; /* fondo salvia */
+  --color-surface: #ffffff;
+  --color-raised: #f7f8f6;
+  --color-active: #eceee9;
+  --color-border: #e4e7e2;
+  --color-rule: #eff1ed;
+  --color-control: #cfd4cc;
+  --color-ink: #141a12;
+  --color-muted: #5d655a;
+  --color-faint: #646c61;
+  --color-hue: #2f8a24; /* solo barras de meta */
+  --color-hue-pale: #e7f2e3;
+  --color-primary: #214820; /* botón principal */
+  --color-primary-hover: #2c5b2a;
+  --color-sec: #e5e8e3; /* botón secundario */
+  --color-sec-hover: #dadfd7;
+  --color-warn: #fdf0e9;
+  --color-warn-ink: #9a3412;
+  --color-note: #fff8e1;
+  --color-note-ink: #7a5200;
+
+  /* Marca (login) */
+  --color-verde: #214820;
+  --color-hoja: #48a733;
+  --color-alerta: #e8431e;
+
+  --font-sans: var(--font-poppins);
+}
+
+body {
+  background: var(--color-ground);
+  color: var(--color-ink);
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Entrada suave del contenido de cada panel */
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.aparecer {
+  animation: aparecer 180ms ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .aparecer {
+    animation: none;
+  }
+}
+
+/* ---------- espacio de trabajo en tres paneles ---------- */
+.trabajo {
+  display: grid;
+  grid-template-columns: 344px minmax(0, 1fr) 392px;
+  gap: 16px;
+  align-items: start;
+}
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 236px);
+  min-height: 480px;
+}
+.panel-cuerpo {
+  overflow: auto;
+  flex: 1;
+}
+.solo-movil {
+  display: none;
+}
+
+/* árbol de personas: tronco vertical y una rama por fila */
+.arbol {
+  position: relative;
+  padding: 0 12px 16px 34px;
+}
+.arbol::before {
+  content: "";
+  position: absolute;
+  left: 23px;
+  top: 0;
+  bottom: 30px;
+  width: 1.5px;
+  background: #c9cec6;
+}
+.arbol > li {
+  position: relative;
+  margin: 2px 0;
+}
+.arbol > li::before {
+  content: "";
+  position: absolute;
+  left: -11px;
+  top: 23px;
+  width: 11px;
+  height: 1.5px;
+  background: #c9cec6;
+}
+
+/* 860–1280px: dos paneles; la ficha baja a ancho completo */
+@media (max-width: 1280px) {
+  .trabajo {
+    grid-template-columns: 320px minmax(0, 1fr);
+  }
+  .panel-ficha {
+    grid-column: 1 / -1;
+    height: auto;
+  }
+  .panel-ficha .panel-cuerpo {
+    overflow: visible;
+  }
+}
+
+/* < 860px: un paso a la vez */
+@media (max-width: 859px) {
+  .trabajo {
+    display: block;
+  }
+  .panel {
+    height: auto;
+    min-height: 0;
+    margin-bottom: 12px;
+  }
+  .panel-cuerpo {
+    overflow: visible;
+  }
+  .trabajo[data-paso="1"] .panel-ref,
+  .trabajo[data-paso="1"] .panel-ficha,
+  .trabajo[data-paso="2"] .panel-lista,
+  .trabajo[data-paso="2"] .panel-ficha,
+  .trabajo[data-paso="3"] .panel-lista,
+  .trabajo[data-paso="3"] .panel-ref {
+    display: none;
+  }
+  .solo-movil {
+    display: inline-flex;
+  }
+}

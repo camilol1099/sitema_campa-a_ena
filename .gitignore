@@ -1,0 +1,32 @@
+# Dependencias
+/node_modules
+/.pnp
+.pnp.*
+
+# Next.js
+/.next/
+/out/
+/build
+next-env.d.ts
+*.tsbuildinfo
+
+# Datos personales sensibles (Ley 1581 de 2012): nunca subir a git
+/data/
+
+# Variables de entorno y llaves: nunca subir a git
+.env*
+*.pem
+
+# Vercel
+.vercel
+
+# Pruebas
+/coverage
+
+# Varios
+.DS_Store
+Thumbs.db
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*

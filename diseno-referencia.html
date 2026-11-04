@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diseño · Sistema de campaña</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap">
+<style>
+/* Estilo: achromatic ledger con la marca.
+   Interfaz en tinta y neutros; el verde solo en el dato principal (avance hacia la meta) y en la acción principal.
+   Fondo salvia (#f2f5f2). Radios 8 / 6. Rejilla de trabajo: 344px | 1fr | 392px, separación 16px. */
+:root{
+  --ground:#f2f5f2;--surface:#fff;--raised:#f7f8f6;--active:#eceee9;
+  --border:#e4e7e2;--rule:#eff1ed;--control:#cfd4cc;
+  --ink:#141a12;--muted:#5d655a;--faint:#646c61;
+  --hue:#2f8a24;--hue-pale:#e7f2e3;--primary:#214820;
+  --warn-bg:#fdf0e9;--warn-ink:#9a3412;--note-bg:#fff8e1;--note-ink:#7a5200;
+  --r:8px;--rc:6px;--gap:16px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:Poppins,system-ui,sans-serif;font-size:14px;line-height:20px;color:var(--ink);background:var(--ground);-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.hidden{display:none!important}
+
+/* ---------- barra superior ---------- */
+.top{height:60px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:28px;padding:0 24px;position:sticky;top:0;z-index:5}
+.mark{display:flex;align-items:center;gap:10px;flex:none}
+.mark b{display:block;font-weight:600;font-size:14px;line-height:16px}
+.mark span{display:block;font-size:12px;line-height:16px;color:var(--muted)}
+.ejes{display:flex;gap:4px;height:100%}
+.ejes button{white-space:nowrap;border:0;background:none;padding:0 14px;height:100%;cursor:pointer;color:var(--muted);display:flex;align-items:center;gap:8px;border-bottom:2px solid transparent;margin-bottom:-1px}
+.ejes button:hover{color:var(--ink)}
+.ejes button.on{color:var(--ink);font-weight:500;border-bottom-color:var(--ink)}
+.ejes .c{font-size:12px;color:var(--muted);font-weight:400}
+.buscar{margin-left:auto;display:flex;align-items:center;gap:8px;height:36px;width:300px;border:1px solid var(--control);border-radius:var(--rc);padding:0 10px;background:var(--surface)}
+.buscar input{border:0;outline:0;flex:1;min-width:0;background:none}
+.buscar kbd{font:inherit;font-size:11px;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:0 5px}
+.yo{width:32px;height:32px;border-radius:50%;background:var(--active);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex:none}
+
+/* ---------- encabezado de la pantalla ---------- */
+.page{padding:24px 24px 32px}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:16px}
+.head h1{margin:0;font-size:24px;line-height:32px;font-weight:600;letter-spacing:-.01em}
+.head p{margin:4px 0 0;color:var(--muted);font-size:15px;line-height:22px;max-width:72ch}
+.head p b{color:var(--ink);font-weight:500}
+.acts{display:flex;gap:8px;flex:none}
+.btn{height:36px;padding:0 14px;border-radius:var(--rc);border:0;background:var(--primary);color:#fff;font-weight:500;cursor:pointer;white-space:nowrap}
+.btn:hover{background:#2c5b2a}
+.btn.sec{background:#e5e8e3;color:var(--ink)}
+.btn.sec:hover{background:#dadfd7}
+.btn.sm{height:30px;padding:0 11px;font-size:13px}
+
+/* ---------- cifras ---------- */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:16px}
+.kpi{padding:14px 18px;border-left:1px solid var(--border)}
+.kpi:first-child{border-left:0}
+.kpi .l{font-size:13px;color:var(--muted)}
+.kpi .v{font-size:24px;line-height:32px;font-weight:500;margin-top:2px}
+.kpi .c{font-size:13px;color:var(--muted)}
+.kpi .c .up{color:var(--hue);font-weight:500}
+
+/* ---------- espacio de trabajo en tres paneles ---------- */
+.work{display:grid;grid-template-columns:344px minmax(0,1fr) 392px;gap:var(--gap);align-items:start}
+.pane{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);min-width:0;display:flex;flex-direction:column;height:calc(100vh - 290px);min-height:520px}
+.pane-h{padding:14px 16px 10px;border-bottom:1px solid var(--rule)}
+.pane-h h2{margin:0;font-size:15px;line-height:22px;font-weight:600}
+.pane-h .sub{font-size:13px;color:var(--muted)}
+.pane-b{overflow:auto;flex:1}
+.filtros{display:flex;gap:6px;margin-top:10px}
+.chip{border:1px solid var(--control);background:var(--surface);border-radius:999px;padding:3px 12px;font-size:13px;cursor:pointer;color:var(--muted)}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.mini{height:32px;width:100%;border:1px solid var(--control);border-radius:var(--rc);padding:0 10px;margin-top:10px;background:#fff}
+
+/* referentes */
+.ref{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--rule);cursor:pointer;position:relative}
+.ref:hover{background:var(--raised)}
+.ref.sel{background:var(--active)}
+.ref.sel::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;background:var(--ink);border-radius:0 2px 2px 0}
+.av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;grid-row:span 2}
+.ref .n{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ref .s{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ref .k{text-align:right;font-weight:500;grid-row:span 2}
+.ref .k small{display:block;font-size:11px;font-weight:400;color:var(--muted)}
+.meta{grid-column:2/4;height:4px;background:var(--rule);border-radius:2px;overflow:hidden;margin-top:6px}
+.meta i{display:block;height:100%;background:var(--hue)}
+.pill{display:inline-block;font-size:12px;line-height:18px;padding:0 7px;border-radius:9px;background:#eef0ec;color:var(--muted);white-space:nowrap}
+.pill.w{background:var(--warn-bg);color:var(--warn-ink)}
+.pill.n{background:var(--note-bg);color:var(--note-ink)}
+
+/* ficha del referente + árbol de personas */
+.refcard{padding:16px 18px;border-bottom:1px solid var(--rule)}
+.refcard .t{display:flex;gap:14px;align-items:center}
+.refcard .av{width:48px;height:48px;font-size:15px}
+.refcard h2{margin:0;font-size:18px;line-height:26px;font-weight:600}
+.refcard .t p{margin:0;font-size:14px;color:var(--muted)}
+.dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 16px;margin:14px 0 0}
+.dl div{min-width:0}
+.dl dt{font-size:13px;color:var(--muted)}
+.dl dd{margin:0;font-weight:500;overflow:hidden;text-overflow:ellipsis}
+.progreso{margin-top:14px}
+.progreso .row{display:flex;justify-content:space-between;font-size:13px}
+.progreso .bar{height:8px;background:var(--rule);border-radius:4px;overflow:hidden;margin-top:6px}
+.progreso .bar i{display:block;height:100%;background:var(--hue);border-radius:4px}
+.nota{margin-top:12px;font-size:13px;color:var(--muted);background:var(--raised);border-radius:var(--rc);padding:8px 10px}
+.arbol-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 18px 6px}
+.arbol-h h3{margin:0;font-size:14px;font-weight:600}
+.arbol{list-style:none;margin:0;padding:0 12px 16px 34px;position:relative}
+.arbol::before{content:"";position:absolute;left:23px;top:0;bottom:30px;width:1.5px;background:#c9cec6}
+.arbol li{position:relative;margin:2px 0}
+.arbol li::before{content:"";position:absolute;left:-11px;top:21px;width:11px;height:1.5px;background:#c9cec6}
+.per{width:100%;text-align:left;border:0;background:none;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:8px 10px;border-radius:var(--rc);cursor:pointer}
+.per:hover{background:var(--raised)}
+.per.sel{background:var(--active)}
+.per .n{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.per .s{font-size:13px;color:var(--muted);grid-column:1}
+.per .f{grid-row:span 2;display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end;max-width:180px}
+
+/* ficha de la persona */
+.ficha .pane-b{padding:4px 18px 18px}
+.fh{padding:16px 18px;border-bottom:1px solid var(--rule)}
+.fh h2{margin:0;font-size:18px;line-height:26px;font-weight:600}
+.fh p{margin:2px 0 0;font-size:13px;color:var(--muted)}
+.fh .acts{margin-top:12px}
+.blk{margin-top:16px}
+.blk h3{margin:0 0 6px;font-size:13px;font-weight:600;color:var(--muted)}
+.campos{display:grid;grid-template-columns:132px minmax(0,1fr);gap:7px 12px;font-size:13.5px}
+.campos dt{color:var(--muted)}
+.campos dd{margin:0}
+.dash{color:var(--faint)}
+.aviso{background:var(--note-bg);color:var(--note-ink);border-radius:var(--rc);padding:9px 11px;font-size:13px;margin-top:12px}
+.vin{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--rule);font-size:13.5px}
+.vin:first-of-type{border-top:0}
+.vin .e{font-size:13px;color:var(--muted)}
+.hist{list-style:none;margin:0;padding:0;font-size:13px}
+.hist li{display:grid;grid-template-columns:86px minmax(0,1fr);gap:10px;padding:6px 0;border-top:1px solid var(--rule)}
+.hist li:first-child{border-top:0}
+.hist time{color:var(--muted);font-variant-numeric:tabular-nums}
+.vacio{padding:48px 24px;text-align:center;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:8px;display:none;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.back{display:none}
+
+@media (max-width:1280px){.work{grid-template-columns:320px minmax(0,1fr)}.ficha{grid-column:1/-1;height:auto}.ficha .pane-b{overflow:visible}}
+@media (max-width:860px){
+  .top{gap:12px;padding:0 16px;height:auto;flex-wrap:wrap;padding-top:8px}.mark span{display:none}
+  .yo{margin-left:auto}.ejes{order:4;width:100%;height:44px;overflow-x:auto}.buscar{order:3;width:100%;margin:0}
+  .page{padding:16px}.head{flex-direction:column;align-items:flex-start}
+  .kpis{grid-template-columns:1fr 1fr}.kpi:nth-child(3){border-left:0}.kpi:nth-child(n+3){border-top:1px solid var(--border)}
+  .work{display:block}.pane{height:auto;min-height:0;margin-bottom:12px}.pane-b{overflow:visible}
+  .work[data-paso="1"] .p2,.work[data-paso="1"] .ficha,.work[data-paso="2"] .p1,.work[data-paso="2"] .ficha,.work[data-paso="3"] .p1,.work[data-paso="3"] .p2{display:none}
+  .back{display:inline-flex;margin:0 0 10px}
+  .dl{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="mark">
+    <svg width="32" height="32" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#214820"/><path d="M17 7v20M17 13l-6-4M17 13l6-4M17 19l-7-3M17 19l7-3" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/><circle cx="17" cy="27" r="2" fill="#48a733"/></svg>
+    <div><b>Jesús Perpiñán</b><span>Sistema de campaña</span></div>
+  </div>
+  <nav class="ejes" aria-label="Ejes de la campaña" id="ejes"></nav>
+  <label class="buscar"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="4.8"/><path d="m10.6 10.6 3.4 3.4"/></svg><input id="q" placeholder="Buscar persona o cédula" aria-label="Buscar persona o cédula"><kbd>/</kbd></label>
+  <span class="yo" title="Administrador del sistema">AS</span>
+</header>
+
+<main class="page">
+  <div class="head">
+    <div><h1 id="titulo"></h1><p id="hallazgo"></p></div>
+    <div class="acts"><button class="btn sec" onclick="toast('Demo: aquí se abriría el formulario de nueva persona')">Nueva persona</button><button class="btn" id="btnNuevo"></button></div>
+  </div>
+  <section class="kpis" id="kpis" aria-label="Cifras del eje"></section>
+
+  <section class="work" id="work" data-paso="1">
+    <div class="pane p1">
+      <div class="pane-h">
+        <h2 id="p1t"></h2><div class="sub">Ordenados por personas vinculadas</div>
+        <input class="mini" id="qRef" placeholder="Filtrar por nombre" aria-label="Filtrar referentes por nombre">
+        <div class="filtros" id="filtros"></div>
+      </div>
+      <div class="pane-b" id="listaRef"></div>
+    </div>
+    <div class="pane p2"><div class="pane-b" id="detRef"></div></div>
+    <div class="pane ficha"><div class="pane-b" id="ficha" style="padding:0"></div></div>
+  </section>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+// ---------- datos de ejemplo (ficticios, con la misma forma que los de prueba en Supabase) ----------
+let seed=42;const rnd=()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+const pick=a=>a[Math.floor(rnd()*a.length)];
+const N=['María','José','Luis','Ana','Carlos','Yuleidis','Jesús','Rosa','Andrés','Diana','Jorge','Leidy','Elkin','Daniela','Javier','Katherine','Óscar','Yesenia','Alberto','Paola','Rafael','Marelvis','Hernán','Luz','Camilo','Ingrid','Wilmer','Sandra','Fabián','Yarledis'];
+const A=['Pérez','Gutiérrez','Mendoza','Arias','Castro','Oñate','Daza','Maestre','Fuentes','Romero','Quintero','Montero','Bolaño','Ospino','Mejía','Rodríguez','Pacheco','Zuleta','Vega','Cuello','Molina','Araújo','Ariza','Carrillo','Barros','Orozco'];
+const B=['Fundadores','Primero de Mayo','Camperucho','Dangond','Los Mayales','Simón Bolívar','Villa Corelca','Panamá','450 Años','Don Carmelo','San Martín','Nueva Esperanza','La Esperanza','Don Alberto','San Fernando','Loperena','San Joaquín','Garupal'];
+const P=['IE Leonidas Acuña','IE Rafael Valle Meza','Col. Nacional Loperena','Col. Francisco Molina Sánchez','Escuela Mixta No 4','Conc. San Joaquín','Col. Nacionalizado Upar','Col. Comfacesar'];
+const REF=[
+ ['lider','Rosa Elena Daza Maestre','Primero de Mayo','activo',60,'Líder fuerte en el sur'],['lider','Jorge Luis Oñate Cuello','Fundadores','activo',40],['lider','Marelvis Pacheco Ariza','Dangond','activo',35],
+ ['lider','Hernán Darío Mendoza Brito','Panamá','activo',30],['lider','Yuleidis Castro Montero','Villa Corelca','activo',30],['lider','Camilo Andrés Quintero Vega','Loperena','activo',25],
+ ['lider','Liliana Bolaño Orozco','Camperucho','activo',25],['lider','Wilmer Fuentes Pumarejo','San Martín','activo',20],['lider','Ingrid Paola Araújo Zuleta',null,'activo',15,'Falta su dirección'],
+ ['lider','Óscar Iván Rodríguez Cotes','Los Mayales','inactivo',null,'Se retiró en septiembre'],
+ ['empresario','Ramiro Gutiérrez Molina','Centro','activo',50,null,{empresa:'Distribuidora El Valle',sector:'Comercio',cargo:'Gerente'}],
+ ['empresario','Claudia Hinojosa Barros','Novalito','activo',30,null,{empresa:'Clínica Dental Sonrisa',sector:'Salud',cargo:'Propietaria'}],
+ ['empresario','Eduardo Carrillo Mejía','San Joaquín','activo',25,null,{empresa:'Transportes Guatapurí',sector:'Transporte',cargo:'Socio'}],
+ ['empresario','Diana Patricia Ospino',null,'activo',null,null,{empresa:'Restaurante La Casona',sector:'Gastronomía',cargo:'Administradora'}],
+ ['aliado','Juan Pedro Maestre Arias','Simón Bolívar','activo',80,null,{partido:'Movimiento Ciudadano',cargo:'Edil Comuna 2',zona:'Comuna 2'}],
+ ['aliado','Sandra Milena Cuello Daza','La Esperanza','activo',60,null,{partido:'Partido Verde',cargo:'Presidenta JAC La Esperanza',zona:'Comuna 5'}],
+ ['aliado','Fabián Romero Pérez','Don Carmelo','activo',45,null,{partido:'Partido Liberal',cargo:'Exconcejal',zona:'Comuna 3'}],
+ ['aliado','Yesenia Molina Ospino',null,'activo',null,null,{partido:'Independiente',cargo:'Lideresa comunal',zona:'Corregimientos'}]
+].map(([tipo,nombre,barrio,estado,meta,notas,extra],id)=>({id,tipo,nombre,barrio,estado,meta,notas,extra:extra||{},hue:Math.floor(rnd()*360)}));
+const COORD=['Daniela Solano Ríos','Francisco Ustáriz Peña','Paola Páramo Díaz','Elvis Díaz Lobo'];
+const PER=Array.from({length:300},(_,k)=>{const i=k+1,r=()=>rnd();const v=r();
+  return {id:k,nombre:`${pick(N)} ${pick(A)} ${pick(A)}`,cedula:i%7?String(1003000000+i*3517):null,celular:i%11?'3000'+String(i).padStart(6,'0'):null,
+   direccion:r()<.3?null:(r()<.5?`Mz ${1+Math.floor(r()*90)} Casa ${1+Math.floor(r()*30)}`:`${r()<.5?'Calle':'Carrera'} ${1+Math.floor(r()*45)} # ${1+Math.floor(r()*40)}-${10+Math.floor(r()*80)}`),
+   barrio:r()<.35?null:pick(B),mun:v<.55?'Valledupar':v<.6?'No vota en el municipio':v<.64?'No está en el censo':v<.65?'Errado':null,
+   puesto:r()<.12?null:pick(P),mesa:null,aut:r()<.4,obs:i%37?null:'Pidió que la llamen en la tarde',vinc:[]}});
+PER.forEach(p=>{if(p.puesto)p.mesa=1+Math.floor(rnd()*40)});
+const lid=REF.filter(r=>r.tipo==='lider'),emp=REF.filter(r=>r.tipo==='empresario'),ali=REF.filter(r=>r.tipo==='aliado');
+PER.forEach((p,k)=>{const rn=k+1;if(rn<=5)return;
+  const r=rn%10===0?emp[(rn/10|0)%emp.length]:rn%10===1?ali[(rn/10|0)%ali.length]:lid[Math.floor(Math.pow(rnd(),1.6)*lid.length)];
+  p.vinc.push({ref:r.id,coord:rnd()<.5?pick(COORD):null,fecha:`${1+Math.floor(rnd()*28)} oct 2026`})});
+let extra=0;PER.forEach((p,k)=>{const rn=k+1;if(extra<15&&rn>=22&&rn<=60&&rn%10>=2){const r=rn%2?ali[rn%ali.length]:emp[rn%emp.length];p.vinc.push({ref:r.id,coord:null,fecha:'2 nov 2026',nota:'También apoya por este referente'});extra++}});
+
+// ---------- utilidades ----------
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>n.toLocaleString('es-CO');
+const ini=n=>n.split(' ').slice(0,2).map(x=>x[0]).join('');
+const av=r=>`<span class="av" style="background:hsl(${r.hue} 40% 92%);color:hsl(${r.hue} 40% 26%)">${esc(ini(r.nombre))}</span>`;
+const dash='<span class="dash">—</span>';
+const mask=c=>'•••• '+c.slice(-4);
+const personasDe=id=>PER.filter(p=>p.vinc.some(v=>v.ref===id));
+const toast=m=>{const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',2600)};
+const EJES={lider:['Líderes','líder','líderes'],empresario:['Empresarios','empresario','empresarios'],aliado:['Aliados políticos','aliado','aliados']};
+const flags=p=>{const f=[];if(!p.cedula)f.push(['w','Sin cédula']);if(p.vinc.length>1)f.push(['n','2 referentes']);if(!p.mun)f.push(['','Sin verificar']);else if(p.mun!=='Valledupar')f.push(['w','No vota aquí']);if(!p.barrio)f.push(['','Sin barrio']);return f};
+
+let eje='lider',refSel=null,perSel=null,filtro='activos';
+function render(){
+  const refs=REF.filter(r=>r.tipo===eje),ps=[...new Set(refs.flatMap(r=>personasDe(r.id)))];
+  $('#ejes').innerHTML=Object.entries(EJES).map(([k,[t]])=>`<button class="${k===eje?'on':''}" onclick="cambiarEje('${k}')">${t}<span class="c num">${REF.filter(r=>r.tipo===k).length}</span></button>`).join('');
+  const [T,uno,varios]=EJES[eje];
+  $('#titulo').textContent=T;$('#p1t').textContent=T;$('#btnNuevo').textContent='Nuevo '+uno;
+  $('#btnNuevo').onclick=()=>toast('Demo: aquí se abriría el formulario de nuevo '+uno);
+  const conMeta=refs.filter(r=>r.meta),cumplen=conMeta.filter(r=>personasDe(r.id).length>=r.meta).length;
+  const top=refs.slice().sort((a,b)=>personasDe(b.id).length-personasDe(a.id).length)[0];
+  $('#hallazgo').innerHTML=`<b>${refs.length} ${varios} reúnen ${fmt(ps.length)} personas.</b> ${cumplen?`${cumplen} ya ${cumplen>1?'cumplen':'cumple'} su meta; `:''}${top?`${esc(top.nombre)} es quien más aporta, con ${personasDe(top.id).length}.`:''}`;
+  const verif=ps.filter(p=>p.mun==='Valledupar').length,inc=ps.filter(p=>!p.cedula||!p.barrio||!p.mun).length,dos=ps.filter(p=>p.vinc.length>1).length;
+  $('#kpis').innerHTML=`<div class="kpi"><div class="l">Personas en este eje</div><div class="v num">${fmt(ps.length)}</div><div class="c">de ${fmt(PER.length)} registradas en total</div></div>
+   <div class="kpi"><div class="l">Votan en Valledupar</div><div class="v num">${fmt(verif)}</div><div class="c">verificadas en el censo</div></div>
+   <div class="kpi"><div class="l">Con datos por completar</div><div class="v num">${fmt(inc)}</div><div class="c">sin cédula, barrio o verificación</div></div>
+   <div class="kpi"><div class="l">También en otro eje</div><div class="v num">${fmt(dos)}</div><div class="c">tienen dos referentes</div></div>`;
+  $('#filtros').innerHTML=[['activos','Activos'],['todos','Todos'],['inactivos','Inactivos']].map(([k,t])=>`<button class="chip${filtro===k?' on':''}" onclick="filtro='${k}';render()">${t}</button>`).join('');
+  const q=$('#qRef').value.toLowerCase();
+  const lista=refs.filter(r=>(filtro==='todos'||(filtro==='activos')===(r.estado==='activo'))&&(!q||r.nombre.toLowerCase().includes(q))).sort((a,b)=>personasDe(b.id).length-personasDe(a.id).length);
+  if(refSel==null||REF[refSel].tipo!==eje)refSel=lista[0]?lista[0].id:null;
+  $('#listaRef').innerHTML=lista.map(r=>{const n=personasDe(r.id).length,pct=r.meta?Math.min(100,n/r.meta*100):0;
+    return `<div class="ref${r.id===refSel?' sel':''}" tabindex="0" role="button" onclick="selRef(${r.id})" onkeydown="if(event.key==='Enter')selRef(${r.id})">
+     ${av(r)}<div class="n">${esc(r.nombre)}</div><div class="k num">${n}<small>${r.meta?'de '+r.meta:'sin meta'}</small></div>
+     <div class="s">${r.estado==='inactivo'?'<span class="pill">Inactivo</span> ':''}${esc(r.barrio||'Sin barrio')}${r.extra.empresa?', '+esc(r.extra.empresa):''}${r.extra.cargo&&eje==='aliado'?', '+esc(r.extra.cargo):''}</div>
+     ${r.meta?`<div class="meta" title="${Math.round(pct)}% de la meta"><i style="width:${pct}%"></i></div>`:''}</div>`}).join('')||`<div class="vacio">No hay ${varios} con ese filtro.</div>`;
+  renderRef();renderFicha()}
+function cambiarEje(k){eje=k;refSel=null;perSel=null;$('#qRef').value='';$('#work').dataset.paso='1';render()}
+function selRef(id){refSel=id;perSel=null;$('#work').dataset.paso='2';render();if(innerWidth<860)scrollTo(0,0)}
+function selPer(id){perSel=id;$('#work').dataset.paso='3';renderRef();renderFicha();if(innerWidth<860)scrollTo(0,0)}
+function renderRef(){
+  if(refSel==null){$('#detRef').innerHTML='<div class="vacio">Elija un referente para ver sus personas.</div>';return}
+  const r=REF[refSel],ps=personasDe(r.id),n=ps.length,[,uno]=EJES[r.tipo];
+  const ex=r.tipo==='empresario'?[['Empresa',r.extra.empresa],['Sector',r.extra.sector],['Cargo',r.extra.cargo]]:r.tipo==='aliado'?[['Partido o movimiento',r.extra.partido],['Cargo político',r.extra.cargo],['Zona de influencia',r.extra.zona]]:[['Barrio',r.barrio],['Estado',r.estado==='activo'?'Activo':'Inactivo'],['Coordinadores',[...new Set(ps.flatMap(p=>p.vinc.filter(v=>v.ref===r.id&&v.coord).map(v=>v.coord)))].length||'—']];
+  $('#detRef').innerHTML=`<button class="btn sec sm back" onclick="$('#work').dataset.paso='1'">Volver a ${EJES[r.tipo][2]}</button>
+   <div class="refcard"><div class="t">${av(r)}<div><h2>${esc(r.nombre)}</h2><p>${uno[0].toUpperCase()+uno.slice(1)}${r.barrio&&r.tipo!=='lider'?', '+esc(r.barrio):''}</p></div></div>
+   <dl class="dl">${ex.map(([k,v])=>`<div><dt>${k}</dt><dd>${v?esc(v):dash}</dd></div>`).join('')}</dl>
+   <div class="progreso"><div class="row"><span>Personas vinculadas</span><span class="num"><b style="font-weight:500">${n}</b>${r.meta?` de una meta de ${r.meta}`:' (sin meta definida)'}</span></div>
+   ${r.meta?`<div class="bar"><i style="width:${Math.min(100,n/r.meta*100)}%"></i></div>`:''}</div>
+   ${r.notas?`<div class="nota">${esc(r.notas)}</div>`:''}</div>
+   <div class="arbol-h"><h3>Sus personas</h3><button class="btn sec sm" onclick="toast('Demo: vincular una persona existente o crear una nueva')">Vincular persona</button></div>
+   ${n?`<ul class="arbol">${ps.map(p=>`<li><button class="per${p.id===perSel?' sel':''}" onclick="selPer(${p.id})"><span class="n">${esc(p.nombre)}</span><span class="f">${flags(p).slice(0,2).map(([c,t])=>`<span class="pill ${c}">${t}</span>`).join('')}</span><span class="s">${esc(p.barrio||'Sin barrio')}${p.puesto?', '+esc(p.puesto):''}</span></button></li>`).join('')}</ul>`:`<div class="vacio">Aún no tiene personas vinculadas.</div>`}`}
+function renderFicha(){
+  if(perSel==null){$('#ficha').innerHTML='<div class="vacio">Elija una persona para ver toda su información.</div>';return}
+  const p=PER[perSel];const fila=(k,v)=>`<dt>${k}</dt><dd>${v??dash}</dd>`;
+  $('#ficha').innerHTML=`<div class="fh"><button class="btn sec sm back" onclick="$('#work').dataset.paso='2'">Volver</button>
+   <h2>${esc(p.nombre)}</h2><p>${p.cedula?'Cédula '+mask(p.cedula):'Sin cédula registrada'}</p>
+   <div class="acts"><button class="btn sm" onclick="toast('Demo: editar persona')">Editar</button><button class="btn sec sm" onclick="toast('Demo: vincular a otro referente')">Vincular a otro referente</button></div></div>
+   <div style="padding:2px 18px 18px">
+   ${p.vinc.length>1?`<div class="aviso">Esta persona está con ${p.vinc.length} referentes. Confirme si es correcto.</div>`:''}
+   <div class="blk"><h3>Datos personales</h3><dl class="campos">${fila('Cédula',p.cedula?esc(p.cedula.slice(0,2)+'•••••'+p.cedula.slice(-3)):null)}${fila('Celular',p.celular?esc('3•• ••• '+p.celular.slice(-4)):null)}${fila('Dirección',p.direccion&&esc(p.direccion))}${fila('Barrio',p.barrio&&esc(p.barrio))}</dl></div>
+   <div class="blk"><h3>Votación</h3><dl class="campos">${fila('Verificación',p.mun?(p.mun==='Valledupar'?'Vota en Valledupar':`<span class="pill w">${esc(p.mun)}</span>`):'<span class="pill">Sin verificar</span>')}${fila('Puesto',p.puesto&&esc(p.puesto))}${fila('Mesa',p.mesa&&`<span class="num">${p.mesa}</span>`)}</dl></div>
+   <div class="blk"><h3>Referentes</h3>${p.vinc.map(v=>{const r=REF[v.ref];return `<div class="vin"><div><div>${esc(r.nombre)}</div><div class="e">${EJES[r.tipo][1][0].toUpperCase()+EJES[r.tipo][1].slice(1)}${v.coord?', coordina '+esc(v.coord):''}</div></div><div class="e num">desde el ${v.fecha}</div></div>`}).join('')||'<p class="muted" style="margin:0">Sin referente.</p>'}</div>
+   <div class="blk"><h3>Autorización y notas</h3><dl class="campos">${fila('Datos personales',p.aut?'Autorizó el tratamiento':'<span class="pill w">Sin autorización</span>')}${fila('Observaciones',p.obs&&esc(p.obs))}</dl></div>
+   <div class="blk"><h3>Historial</h3><ul class="hist"><li><time>2 nov, 9:14</time><span>Se vinculó a ${esc(REF[p.vinc[0]?.ref??0].nombre)}</span></li><li><time>28 oct, 16:02</time><span>Se corrigió el barrio</span></li><li><time>20 oct, 11:40</time><span>Registro creado</span></li></ul></div>
+   </div>`}
+$('#qRef').addEventListener('input',render);
+$('#q').addEventListener('keydown',e=>{if(e.key!=='Enter')return;const q=e.target.value.trim().toLowerCase();if(!q)return;
+  const p=PER.find(x=>x.nombre.toLowerCase().includes(q)||(x.cedula&&x.cedula.endsWith(q)));if(!p||!p.vinc.length){toast('No se encontró esa persona');return}
+  const r=REF[p.vinc[0].ref];eje=r.tipo;refSel=r.id;perSel=p.id;$('#work').dataset.paso='3';render()});
+document.addEventListener('keydown',e=>{if(e.key==='/'&&document.activeElement.tagName!=='INPUT'){e.preventDefault();$('#q').focus()}});
+render();selRef(REF[0].id);selPer(personasDe(REF[0].id)[0].id);$('#work').dataset.paso='1';
+</script>
+</body>
+</html>
