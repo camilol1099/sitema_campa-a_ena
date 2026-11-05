@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { alertasPersona } from '@/lib/alertas'
-import { coordinadoresDistintos, cuantosCumplenMeta, datosFichaReferente, porcentajeMeta } from '@/lib/fichas'
+import { coordinadoresDistintos, datosFichaReferente } from '@/lib/fichas'
 import { filtrarReferentes, sinTildes } from '@/lib/filtros'
 import type { ReferenteFicha } from '@/lib/tipos'
 
@@ -13,62 +13,36 @@ describe('sinTildes', () => {
 
 describe('filtrarReferentes', () => {
   const refs = [
-    { nombre: 'Rosa Elena Daza', estado: 'activo' as const, total_personas: 10 },
-    { nombre: 'Óscar Iván Rodríguez', estado: 'inactivo' as const, total_personas: 0 },
-    { nombre: 'Jorge Luis Oñate', estado: 'activo' as const, total_personas: 30 },
-    { nombre: 'Ana Ariza', estado: 'activo' as const, total_personas: 10 },
+    { nombre: 'Rosa Elena Daza', total_personas: 10 },
+    { nombre: 'Óscar Iván Rodríguez', total_personas: 0 },
+    { nombre: 'Jorge Luis Oñate', total_personas: 30 },
+    { nombre: 'Ana Ariza', total_personas: 10 },
   ]
   const nombres = (r: { nombre: string }[]) => r.map((x) => x.nombre)
 
-  it('activos: ordenados por personas y luego por nombre', () => {
-    expect(nombres(filtrarReferentes(refs, '', 'activos'))).toEqual([
+  it('ordenados por personas y luego por nombre', () => {
+    expect(nombres(filtrarReferentes(refs, ''))).toEqual([
       'Jorge Luis Oñate',
       'Ana Ariza',
       'Rosa Elena Daza',
+      'Óscar Iván Rodríguez',
     ])
   })
-  it('inactivos y todos', () => {
-    expect(nombres(filtrarReferentes(refs, '', 'inactivos'))).toEqual(['Óscar Iván Rodríguez'])
-    expect(filtrarReferentes(refs, '', 'todos')).toHaveLength(4)
-  })
   it('por nombre, sin importar tildes ni mayúsculas', () => {
-    expect(nombres(filtrarReferentes(refs, 'oscar', 'todos'))).toEqual(['Óscar Iván Rodríguez'])
-    expect(nombres(filtrarReferentes(refs, '  OÑATE ', 'activos'))).toEqual(['Jorge Luis Oñate'])
-  })
-  it('combina nombre y estado', () => {
-    expect(filtrarReferentes(refs, 'oscar', 'activos')).toEqual([])
+    expect(nombres(filtrarReferentes(refs, 'oscar'))).toEqual(['Óscar Iván Rodríguez'])
+    expect(nombres(filtrarReferentes(refs, '  OÑATE '))).toEqual(['Jorge Luis Oñate'])
   })
   it('no modifica la lista original', () => {
     const copia = [...refs]
-    filtrarReferentes(refs, '', 'todos')
+    filtrarReferentes(refs, '')
     expect(refs).toEqual(copia)
-  })
-})
-
-describe('meta', () => {
-  it('porcentajeMeta: sin meta 0, tope 100', () => {
-    expect(porcentajeMeta(10, null)).toBe(0)
-    expect(porcentajeMeta(10, 0)).toBe(0)
-    expect(porcentajeMeta(15, 30)).toBe(50)
-    expect(porcentajeMeta(61, 25)).toBe(100)
-  })
-  it('cuantosCumplenMeta: los que no tienen meta no cuentan', () => {
-    expect(
-      cuantosCumplenMeta([
-        { meta_personas: 25, total_personas: 61 },
-        { meta_personas: 30, total_personas: 30 },
-        { meta_personas: 40, total_personas: 22 },
-        { meta_personas: null, total_personas: 8 },
-      ]),
-    ).toBe(2)
   })
 })
 
 describe('ficha corta del referente', () => {
   const base: ReferenteFicha = {
     id: '1', tipo: 'lider', nombre: 'Rosa', cedula: '1065100001', barrio: 'Fundadores', municipio: 'Valledupar',
-    estado: 'activo', meta_personas: 60, notas: null,
-    empresa: null, sector: null, cargo: null, partido_movimiento: null, cargo_politico: null, zona_influencia: null,
+    empresa: null, zona_influencia: null,
   }
 
   it('coordinadoresDistintos: sin repetidos ni vacíos', () => {
@@ -77,31 +51,25 @@ describe('ficha corta del referente', () => {
     ).toEqual(['Paola', 'Elvis'])
   })
 
-  it('líder → barrio, estado, coordinadores', () => {
+  it('líder → barrio, coordinadores', () => {
     expect(datosFichaReferente(base, ['Paola', 'Elvis'])).toEqual([
       ['Barrio', 'Fundadores'],
-      ['Estado', 'Activo'],
       ['Coordinadores', '2'],
     ])
-    expect(datosFichaReferente({ ...base, estado: 'inactivo' }, [])).toEqual([
+    expect(datosFichaReferente(base, [])).toEqual([
       ['Barrio', 'Fundadores'],
-      ['Estado', 'Inactivo'],
       ['Coordinadores', null],
     ])
   })
 
-  it('empresario → empresa, sector, cargo', () => {
-    const r = { ...base, tipo: 'empresario' as const, empresa: 'Clínica Sonrisa', sector: 'Salud', cargo: 'Propietaria' }
-    expect(datosFichaReferente(r, [])).toEqual([
-      ['Empresa', 'Clínica Sonrisa'],
-      ['Sector', 'Salud'],
-      ['Cargo', 'Propietaria'],
-    ])
+  it('empresario → empresa', () => {
+    const r = { ...base, tipo: 'empresario' as const, empresa: 'Clínica Sonrisa' }
+    expect(datosFichaReferente(r, [])).toEqual([['Empresa', 'Clínica Sonrisa']])
   })
 
-  it('aliado → partido, cargo político, zona', () => {
-    const r = { ...base, tipo: 'aliado' as const, partido_movimiento: 'Partido Verde', cargo_politico: 'Edil', zona_influencia: 'Comuna 5' }
-    expect(datosFichaReferente(r, []).map(([k]) => k)).toEqual(['Partido o movimiento', 'Cargo político', 'Zona de influencia'])
+  it('aliado → zona', () => {
+    const r = { ...base, tipo: 'aliado' as const, zona_influencia: 'Comuna 5' }
+    expect(datosFichaReferente(r, [])).toEqual([['Zona de influencia', 'Comuna 5']])
   })
 
   it('nunca muestra dirección ni teléfono, aunque vengan en el objeto', () => {

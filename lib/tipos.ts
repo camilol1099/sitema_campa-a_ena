@@ -5,12 +5,8 @@ export type ReferenteResumen = {
   tipo: TipoReferente;
   nombre: string;
   barrio: string | null;
-  estado: "activo" | "inactivo";
-  meta_personas: number | null;
   empresa: string | null;
-  sector: string | null;
-  partido_movimiento: string | null;
-  cargo_politico: string | null;
+  zona_influencia: string | null;
   total_personas: number;
 };
 
@@ -22,9 +18,6 @@ export type ReferenteFicha = {
   cedula: string | null;
   barrio: string | null;
   municipio: string | null;
-  estado: "activo" | "inactivo";
-  meta_personas: number | null;
-  notas: string | null;
 } & Record<CampoTipo, string | null>;
 
 // Para el formulario de edición sí se cargan celular y dirección.
@@ -94,4 +87,33 @@ export type ResultadoBusqueda = {
   referente_id: string | null;
   referente_tipo: TipoReferente | null;
   referente_nombre: string | null;
+};
+
+// ---------- Panel de avance (vistas panel_*) ----------
+export type PanelTotal = {
+  tipo: TipoReferente;
+  referentes: number;
+  personas: number;
+};
+
+export type PanelReferente = {
+  id: string;
+  nombre: string;
+  tipo: TipoReferente;
+  total_personas: number;
+};
+
+export type PanelBarrio = {
+  barrio: string;
+  sin_barrio: boolean;
+  personas: number;
+};
+
+export type PanelCalidad = {
+  sin_cedula: number;
+  sin_barrio: number;
+  sin_puesto: number;
+  sin_verificar: number;
+  sin_vinculo: number;
+  varios_referentes: number;
 };

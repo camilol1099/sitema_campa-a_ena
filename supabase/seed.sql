@@ -6,30 +6,42 @@
 -- =====================================================================
 select setseed(0.42);
 
+-- ---------- listas (barrios, municipios, puestos de votación) ----------
+insert into public.municipios (nombre) values ('Valledupar');
+insert into public.barrios (nombre) values
+  ('Fundadores'), ('Primero de Mayo'), ('Camperucho'), ('Dangond'), ('Los Mayales'), ('Simón Bolívar'),
+  ('Villa Corelca'), ('Panamá'), ('450 Años'), ('Don Carmelo'), ('San Martín'), ('Nueva Esperanza'),
+  ('La Esperanza'), ('Don Alberto'), ('San Fernando'), ('Loperena'), ('San Joaquín'), ('Garupal'),
+  ('Populandia'), ('Villa Miriam'), ('Novalito'), ('Centro'), ('Los Cortijos'), ('Villa Castro');
+insert into public.puestos_votacion (nombre) values
+  ('IE Leonidas Acuña'), ('IE Rafael Valle Meza'), ('Col. Nacional Loperena'), ('Col. Francisco Molina Sánchez'),
+  ('Escuela Mixta No 4'), ('Conc. San Joaquín'), ('Col. Nacionalizado Upar'), ('Col. Comfacesar'),
+  ('Coliseo Julio Monsalvo'), ('Col. José Eugenio Martínez'), ('IE Loperena Garupal'), ('Col. Milciades Cantillo');
+
 -- ---------- referentes ----------
-insert into public.referentes (tipo, nombre, cedula, celular, direccion, barrio, municipio, estado, meta_personas, notas) values
-  ('lider', 'Rosa Elena Daza Maestre',      '1065100001', '3000000101', 'Calle 16 # 10-20',   'Primero de Mayo', 'Valledupar', 'activo',   60, 'Líder fuerte en el sur'),
-  ('lider', 'Jorge Luis Oñate Cuello',      '1065100002', '3000000102', 'Carrera 19 # 21-15', 'Fundadores',      'Valledupar', 'activo',   40, null),
-  ('lider', 'Marelvis Pacheco Ariza',       '1065100003', '3000000103', 'Mz 12 Casa 4',       'Dangond',         'Valledupar', 'activo',   35, null),
-  ('lider', 'Hernán Darío Mendoza Brito',   '1065100004', '3000000104', 'Calle 21 # 5-30',    'Panamá',          'Valledupar', 'activo',   30, null),
-  ('lider', 'Yuleidis Castro Montero',      '1065100005', '3000000105', 'Diagonal 21 # 18-40','Villa Corelca',   'Valledupar', 'activo',   30, null),
-  ('lider', 'Camilo Andrés Quintero Vega',  '1065100006', '3000000106', 'Carrera 9 # 14-02',  'Loperena',        'Valledupar', 'activo',   25, null),
-  ('lider', 'Liliana Bolaño Orozco',        '1065100007', '3000000107', 'Mz 30 Casa 11',      'Camperucho',      'Valledupar', 'activo',   25, null),
-  ('lider', 'Wilmer Fuentes Pumarejo',      '1065100008', '3000000108', 'Calle 44 # 23-10',   'San Martín',      'Valledupar', 'activo',   20, null),
-  ('lider', 'Ingrid Paola Araújo Zuleta',   '1065100009', '3000000109', null,                 null,              'Valledupar', 'activo',   15, 'Falta su dirección'),
-  ('lider', 'Óscar Iván Rodríguez Cotes',   null,         null,         null,                 'Los Mayales',     'Valledupar', 'inactivo', null, 'Se retiró en septiembre');
+insert into public.referentes (tipo, nombre, cedula, celular, direccion, barrio, municipio) values
+  ('lider', 'Rosa Elena Daza Maestre',      '1065100001', '3000000101', 'Calle 16 # 10-20',   'Primero de Mayo', 'Valledupar'),
+  ('lider', 'Jorge Luis Oñate Cuello',      '1065100002', '3000000102', 'Carrera 19 # 21-15', 'Fundadores',      'Valledupar'),
+  ('lider', 'Marelvis Pacheco Ariza',       '1065100003', '3000000103', 'Mz 12 Casa 4',       'Dangond',         'Valledupar'),
+  ('lider', 'Hernán Darío Mendoza Brito',   '1065100004', '3000000104', 'Calle 21 # 5-30',    'Panamá',          'Valledupar'),
+  ('lider', 'Yuleidis Castro Montero',      '1065100005', '3000000105', 'Diagonal 21 # 18-40','Villa Corelca',   'Valledupar'),
+  ('lider', 'Camilo Andrés Quintero Vega',  '1065100006', '3000000106', 'Carrera 9 # 14-02',  'Loperena',        'Valledupar'),
+  ('lider', 'Liliana Bolaño Orozco',        '1065100007', '3000000107', 'Mz 30 Casa 11',      'Camperucho',      'Valledupar'),
+  ('lider', 'Wilmer Fuentes Pumarejo',      '1065100008', '3000000108', 'Calle 44 # 23-10',   'San Martín',      'Valledupar'),
+  ('lider', 'Ingrid Paola Araújo Zuleta',   '1065100009', '3000000109', null,                 null,              'Valledupar'),
+  ('lider', 'Óscar Iván Rodríguez Cotes',   null,         null,         null,                 'Los Mayales',     'Valledupar');
 
-insert into public.referentes (tipo, nombre, cedula, celular, direccion, barrio, municipio, meta_personas, empresa, sector, cargo) values
-  ('empresario', 'Ramiro Gutiérrez Molina',  '1065200001', '3000000201', 'Calle 15 # 7-80',  'Centro',      'Valledupar', 50, 'Distribuidora El Valle',   'Comercio',     'Gerente'),
-  ('empresario', 'Claudia Hinojosa Barros',  '1065200002', '3000000202', 'Carrera 4 # 12-30','Novalito',    'Valledupar', 30, 'Clínica Dental Sonrisa',   'Salud',        'Propietaria'),
-  ('empresario', 'Eduardo Carrillo Mejía',   '1065200003', '3000000203', null,               'San Joaquín', 'Valledupar', 25, 'Transportes Guatapurí',    'Transporte',   'Socio'),
-  ('empresario', 'Diana Patricia Ospino',    '1065200004', '3000000204', null,               null,          'Valledupar', null, 'Restaurante La Casona',  'Gastronomía',  'Administradora');
+insert into public.referentes (tipo, nombre, cedula, celular, direccion, barrio, municipio, empresa) values
+  ('empresario', 'Ramiro Gutiérrez Molina',  '1065200001', '3000000201', 'Calle 15 # 7-80',  'Centro',      'Valledupar', 'Distribuidora El Valle'),
+  ('empresario', 'Claudia Hinojosa Barros',  '1065200002', '3000000202', 'Carrera 4 # 12-30','Novalito',    'Valledupar', 'Clínica Dental Sonrisa'),
+  ('empresario', 'Eduardo Carrillo Mejía',   '1065200003', '3000000203', null,               'San Joaquín', 'Valledupar', 'Transportes Guatapurí'),
+  ('empresario', 'Diana Patricia Ospino',    '1065200004', '3000000204', null,               null,          'Valledupar', 'Restaurante La Casona');
 
-insert into public.referentes (tipo, nombre, cedula, celular, direccion, barrio, municipio, meta_personas, partido_movimiento, cargo_politico, zona_influencia) values
-  ('aliado', 'Juan Pedro Maestre Arias',   '1065300001', '3000000301', null, 'Simón Bolívar', 'Valledupar', 80, 'Movimiento Ciudadano', 'Edil Comuna 2',                 'Comuna 2'),
-  ('aliado', 'Sandra Milena Cuello Daza',  '1065300002', '3000000302', null, 'La Esperanza',  'Valledupar', 60, 'Partido Verde',        'Presidenta JAC La Esperanza',   'Comuna 5'),
-  ('aliado', 'Fabián Romero Pérez',        '1065300003', '3000000303', null, 'Don Carmelo',   'Valledupar', 45, 'Partido Liberal',      'Exconcejal',                    'Comuna 3'),
-  ('aliado', 'Yesenia Molina Ospino',      '1065300004', '3000000304', null, null,            'Valledupar', null, 'Independiente',      'Lideresa comunal',              'Corregimientos');
+insert into public.referentes (tipo, nombre, cedula, celular, direccion, barrio, municipio, zona_influencia) values
+  ('aliado', 'Juan Pedro Maestre Arias',   '1065300001', '3000000301', null, 'Simón Bolívar', 'Valledupar', 'Comuna 2'),
+  ('aliado', 'Sandra Milena Cuello Daza',  '1065300002', '3000000302', null, 'La Esperanza',  'Valledupar', 'Comuna 5'),
+  ('aliado', 'Fabián Romero Pérez',        '1065300003', '3000000303', null, 'Don Carmelo',   'Valledupar', 'Comuna 3'),
+  ('aliado', 'Yesenia Molina Ospino',      '1065300004', '3000000304', null, null,            'Valledupar', 'Corregimientos');
 
 -- ---------- 300 personas ----------
 with d as (

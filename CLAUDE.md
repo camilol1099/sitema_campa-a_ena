@@ -28,7 +28,7 @@ casi solo configuración.
 
 ### Reglas de visualización
 - **Ficha del referente (líder, empresario, aliado):** NO mostrar dirección ni teléfono (se guardan, pero no se muestran).
-  Mostrar: nombre, tipo, barrio, estado, datos propios del tipo, cuántas personas tiene y su lista.
+  Mostrar: nombre, tipo, barrio, datos propios del tipo, cuántas personas tiene y su lista.
 - **Ficha de la persona:** mostrar toda su información.
 - La información se actualiza constantemente: crear, editar y vincular desde la web; cada cambio queda registrado.
 
@@ -59,22 +59,30 @@ Todas las tablas con `id uuid`, `created_at`, `updated_at` (trigger), `created_b
 | `nombre` | obligatorio |
 | `cedula` | única si existe |
 | `celular`, `direccion` | se guardan, **no se muestran** en la ficha |
-| `barrio`, `municipio` | |
-| `estado` | `activo` \| `inactivo` |
-| `meta_personas` | cuántas personas se compromete a traer (opcional) |
-| `notas` | |
-| Solo empresario: `empresa`, `sector`, `cargo` | |
-| Solo aliado: `partido_movimiento`, `cargo_politico`, `zona_influencia` | |
+| `barrio`, `municipio` | de las listas `barrios` y `municipios` |
+| Solo empresario: `empresa` | |
+| Solo aliado: `zona_influencia` | |
+
+(Sin meta de personas, notas, sector ni partido/movimiento: se quitaron a pedido del desarrollador.)
 
 ### `personas`
 | Campo | Notas |
 |---|---|
 | `nombre` | obligatorio |
 | `cedula` | **única si existe** (puede faltar) |
-| `celular`, `direccion`, `barrio` | |
+| `celular`, `direccion` | |
+| `barrio` | de la lista `barrios` |
 | `municipio_verificacion` | `Valledupar`, `No vota en el municipio`, `No está en el censo`, `Errado`, `Cancelado` o vacío (sin verificar) |
-| `puesto_votacion`, `mesa` | |
+| `puesto_votacion` | de la lista `puestos_votacion` |
+| `mesa` | |
 | `observaciones` | |
+
+### Listas: `barrios`, `municipios`, `puestos_votacion`
+Una columna `nombre` (llave primaria, sin espacios sobrantes). `referentes.barrio`, `referentes.municipio`,
+`personas.barrio` y `personas.puesto_votacion` guardan el nombre con llave foránea `on update cascade`.
+En los formularios se elige de una lista con búsqueda; si no aparece, se agrega como nuevo
+(se compara sin tildes ni mayúsculas para no duplicar). Al importar el Excel, los nombres que falten
+se agregan a la lista tal como vienen; unificar variantes se consulta con el desarrollador.
 | `autorizacion_datos`, `fecha_autorizacion` | Ley 1581 |
 | `origen` | `excel_2025` \| `manual` |
 | `excel_numero` | el `#` original del Excel, si viene de ahí |

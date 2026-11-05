@@ -1,3 +1,4 @@
+import { leerCatalogo, type Catalogo, type Catalogos } from "./catalogos";
 import { CAMPOS_TIPO, VERIFICACIONES, esUuid, type TipoReferente } from "./ejes";
 import { enteroOpcional, textoOpcional, validarCedula } from "./validacion";
 
@@ -8,20 +9,37 @@ type Errores = Record<string, string>;
 
 export type FilaReferente = Record<string, string | number | null>;
 
+// Nombres que hay que agregar a un catálogo antes de guardar.
+export type Nuevo = { cat: Catalogo; nombre: string };
+
+// Lee los campos de catálogo y junta errores y nombres nuevos.
+function leerCatalogos(formData: FormData, cats: Catalogo[], catalogos: Catalogos, errores: Errores) {
+  const valores = {} as Record<Catalogo, string | null>;
+  const nuevos: Nuevo[] = [];
+  for (const cat of cats) {
+    const r = leerCatalogo(formData, cat, catalogos[cat]);
+    if (r.error) errores[cat] = r.error;
+    if (r.nuevo) nuevos.push({ cat, nombre: r.nuevo });
+    valores[cat] = r.valor;
+  }
+  return { valores, nuevos };
+}
+
+const MAX_TEXTO = 120;
+
 // Formulario de referente: campos comunes + solo los campos propios de su tipo.
 export function leerReferente(
   formData: FormData,
   tipo: TipoReferente,
-): { errores: Errores; fila: FilaReferente; cedula: string | null } {
+  catalogos: Catalogos,
+): { errores: Errores; fila: FilaReferente; cedula: string | null; nuevos: Nuevo[] } {
   const errores: Errores = {};
   const nombre = textoOpcional(formData.get("nombre"));
   if (!nombre) errores.nombre = "Escribe el nombre.";
   const cedula = textoOpcional(formData.get("cedula"));
   const errCedula = validarCedula(cedula);
   if (errCedula) errores.cedula = errCedula;
-  const meta = enteroOpcional(formData.get("meta_personas"), 0);
-  if (meta.error) errores.meta_personas = meta.error;
-  const estado = formData.get("estado") === "inactivo" ? "inactivo" : "activo";
+  const { valores, nuevos } = leerCatalogos(formData, ["barrio", "municipio"], catalogos, errores);
 
   const fila: FilaReferente = {
     tipo,
@@ -29,17 +47,16 @@ export function leerReferente(
     cedula,
     celular: textoOpcional(formData.get("celular")),
     direccion: textoOpcional(formData.get("direccion")),
-    barrio: textoOpcional(formData.get("barrio")),
-    municipio: textoOpcional(formData.get("municipio")),
-    estado,
-    meta_personas: meta.valor,
-    notas: textoOpcional(formData.get("notas")),
+    barrio: valores.barrio,
+    municipio: valores.municipio,
   };
-  for (const { campo } of CAMPOS_TIPO[tipo]) {
-    fila[campo] = textoOpcional(formData.get(campo));
+  for (const { campo, etiqueta } of CAMPOS_TIPO[tipo]) {
+    const t = textoOpcional(formData.get(campo));
+    if (t && t.length > MAX_TEXTO) errores[campo] = `${etiqueta}: máximo ${MAX_TEXTO} letras.`;
+    fila[campo] = t;
   }
 
-  return { errores, fila, cedula };
+  return { errores, fila, cedula, nuevos };
 }
 
 export type FilaPersona = {
@@ -61,12 +78,14 @@ export type FilaPersona = {
 export function leerPersona(
   formData: FormData,
   esEdicion: boolean,
+  catalogos: Catalogos,
   ahora: () => Date = () => new Date(),
 ): {
   errores: Errores;
   fila: FilaPersona;
   referenteId: string | null;
   coordinador: string | null;
+  nuevos: Nuevo[];
 } {
   const errores: Errores = {};
   const nombre = textoOpcional(formData.get("nombre"));
@@ -81,6 +100,8 @@ export function leerPersona(
   if (verificacion && !(VERIFICACIONES as readonly string[]).includes(verificacion)) {
     errores.municipio_verificacion = "Elige una opción de la lista.";
   }
+
+  const { valores, nuevos } = leerCatalogos(formData, ["barrio", "puesto_votacion"], catalogos, errores);
 
   const autorizo = formData.get("autorizacion_datos") === "on";
   const fechaAut = textoOpcional(formData.get("fecha_autorizacion"));
@@ -98,9 +119,9 @@ export function leerPersona(
     cedula,
     celular: textoOpcional(formData.get("celular")),
     direccion: textoOpcional(formData.get("direccion")),
-    barrio: textoOpcional(formData.get("barrio")),
+    barrio: valores.barrio,
     municipio_verificacion: verificacion,
-    puesto_votacion: textoOpcional(formData.get("puesto_votacion")),
+    puesto_votacion: valores.puesto_votacion,
     mesa: mesa.valor,
     observaciones: textoOpcional(formData.get("observaciones")),
     autorizacion_datos: autorizo,
@@ -117,5 +138,6 @@ export function leerPersona(
     fila,
     referenteId,
     coordinador: textoOpcional(formData.get("coordinador")),
+    nuevos,
   };
 }

@@ -13,7 +13,7 @@ export async function iniciarSesion(
   const contrasena = String(formData.get("contrasena") ?? "");
 
   if (!correo || !contrasena) {
-    return { error: "Escribe tu correo y tu contraseña." };
+    return { error: "Escriba su correo y su contraseña." };
   }
 
   const supabase = await crearClienteServidor();
@@ -23,13 +23,11 @@ export async function iniciarSesion(
   });
 
   if (error) {
-    if (error.code === "invalid_credentials") {
-      return { error: "El correo o la contraseña no son correctos." };
+    // Mensaje genérico: nunca decir si falló el correo o la contraseña.
+    if (error.code === "invalid_credentials" || error.code === "email_not_confirmed") {
+      return { error: "Correo o contraseña incorrectos." };
     }
-    if (error.code === "email_not_confirmed") {
-      return { error: "Este correo todavía no ha sido confirmado." };
-    }
-    return { error: "No se pudo iniciar sesión. Intenta de nuevo." };
+    return { error: "No se pudo iniciar sesión. Intente de nuevo." };
   }
 
   redirect("/");

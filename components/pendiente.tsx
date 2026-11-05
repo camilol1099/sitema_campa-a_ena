@@ -8,7 +8,7 @@ export default function Pendiente() {
   return (
     <span
       aria-hidden="true"
-      className={`pointer-events-none absolute top-1/2 right-2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-primary transition-opacity ${
+      className={`pointer-events-none absolute top-1/2 right-2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-brand-2 transition-opacity ${
         pending ? "opacity-100 motion-safe:animate-pulse" : "opacity-0"
       }`}
     />

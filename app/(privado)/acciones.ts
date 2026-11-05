@@ -1,9 +1,11 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { CATALOGOS } from "@/lib/catalogos";
+import { catalogos } from "@/lib/datos";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { EJES, esUuid, type TipoReferente } from "@/lib/ejes";
-import { leerPersona, leerReferente } from "@/lib/formularios";
+import { leerPersona, leerReferente, type Nuevo } from "@/lib/formularios";
 import { rutaPersona, rutaReferente } from "@/lib/rutas";
 import { textoOpcional } from "@/lib/validacion";
 
@@ -67,6 +69,18 @@ async function referenteConCedula(
   };
 }
 
+// Agrega a los catálogos los barrios, municipios o puestos nuevos.
+// Si ya existían (otra pestaña los agregó), no pasa nada.
+async function agregarNuevos(supabase: Supabase, nuevos: Nuevo[]) {
+  for (const { cat, nombre } of nuevos) {
+    const { error } = await supabase
+      .from(CATALOGOS[cat].tabla)
+      .upsert({ nombre }, { onConflict: "nombre", ignoreDuplicates: true });
+    if (error) return false;
+  }
+  return true;
+}
+
 // ---------------------------------------------------------------------------
 // Referentes (líder, empresario, aliado)
 // ---------------------------------------------------------------------------
@@ -78,7 +92,7 @@ export async function datosReferenteParaEditar(id: string) {
   const { data } = await supabase
     .from("referentes")
     .select(
-      "id,tipo,nombre,cedula,celular,direccion,barrio,municipio,estado,meta_personas,notas,empresa,sector,cargo,partido_movimiento,cargo_politico,zona_influencia",
+      "id,tipo,nombre,cedula,celular,direccion,barrio,municipio,empresa,zona_influencia",
     )
     .eq("id", id)
     .maybeSingle();
@@ -93,7 +107,7 @@ export async function guardarReferente(formData: FormData): Promise<Resultado> {
     return { ok: false, mensaje: ERROR_GENERAL };
   }
 
-  const { errores, fila, cedula } = leerReferente(formData, tipo);
+  const { errores, fila, cedula, nuevos } = leerReferente(formData, tipo, await catalogos());
   if (Object.keys(errores).length) return { ok: false, errores };
 
   const supabase = await crearClienteServidor();
@@ -108,6 +122,8 @@ export async function guardarReferente(formData: FormData): Promise<Resultado> {
       };
     }
   }
+
+  if (!(await agregarNuevos(supabase, nuevos))) return { ok: false, mensaje: ERROR_GENERAL };
 
   const r = id
     ? await supabase.from("referentes").update(fila).eq("id", id).select("id").single()
@@ -134,7 +150,11 @@ export async function guardarPersona(formData: FormData): Promise<Resultado> {
   const id = textoOpcional(formData.get("id"));
   if (id !== null && !esUuid(id)) return { ok: false, mensaje: ERROR_GENERAL };
 
-  const { errores, fila, referenteId, coordinador } = leerPersona(formData, id !== null);
+  const { errores, fila, referenteId, coordinador, nuevos } = leerPersona(
+    formData,
+    id !== null,
+    await catalogos(),
+  );
   const cedula = fila.cedula;
   if (Object.keys(errores).length) return { ok: false, errores };
 
@@ -150,6 +170,8 @@ export async function guardarPersona(formData: FormData): Promise<Resultado> {
       };
     }
   }
+
+  if (!(await agregarNuevos(supabase, nuevos))) return { ok: false, mensaje: ERROR_GENERAL };
 
   const r = id
     ? await supabase.from("personas").update(fila).eq("id", id).select("id").single()

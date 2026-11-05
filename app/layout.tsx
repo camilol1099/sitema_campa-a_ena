@@ -5,7 +5,7 @@ import "./globals.css";
 const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -17,8 +17,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es" className={`${poppins.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="es" className={`${poppins.variable} h-full`}>
+      <body className="flex min-h-full flex-col">
+        {/* Manchas de la marca, fijas: es lo que el vidrio deja ver */}
+        <div className="fondo" aria-hidden="true" />
+        {children}
+      </body>
     </html>
   );
 }

@@ -58,7 +58,10 @@ async function crearPersona(extra: Record<string, unknown> = {}) {
 
 // ─────────────────────────────────────────────
 describe('Sin sesión (clave pública)', () => {
-  for (const tabla of ['referentes', 'personas', 'vinculos', 'historial', 'referentes_resumen']) {
+  for (const tabla of [
+    'referentes', 'personas', 'vinculos', 'historial', 'referentes_resumen',
+    'barrios', 'municipios', 'puestos_votacion', 'panel_totales', 'panel_referentes',
+  ]) {
     it(`no puede leer ${tabla}`, async () => {
       const { data, error } = await anon.from(tabla).select('*').limit(1)
       expect(error !== null || (data ?? []).length === 0).toBe(true)
@@ -135,6 +138,30 @@ describe('Validaciones de personas', () => {
   it('rechaza referente con nombre vacío', async () => {
     const { error } = await admin.from('referentes').insert({ tipo: 'lider', nombre: '   ' })
     expect(error).not.toBeNull()
+  })
+
+  it('el barrio y el puesto deben existir en su lista', async () => {
+    const b = await crearPersona({ barrio: 'Barrio que no existe 123' })
+    expect(b.error?.code).toBe('23503') // llave foránea
+    const p = await crearPersona({ puesto_votacion: 'Puesto que no existe 123' })
+    expect(p.error?.code).toBe('23503')
+  })
+
+  it('el municipio del referente debe existir en su lista', async () => {
+    const { error } = await admin.from('referentes').insert({ tipo: 'lider', nombre: 'Prueba', municipio: 'Municipio inexistente' })
+    expect(error?.code).toBe('23503')
+  })
+
+  it('las listas no aceptan nombres con espacios sobrantes', async () => {
+    const { error } = await admin.from('barrios').insert({ nombre: '  Con espacios ' })
+    expect(error?.code).toBe('23514')
+  })
+
+  it('ya no existen meta, notas, sector ni partido', async () => {
+    for (const c of ['meta_personas', 'notas', 'sector', 'partido_movimiento']) {
+      const { error } = await admin.from('referentes').select(c).limit(1)
+      expect(error).not.toBeNull()
+    }
   })
 })
 

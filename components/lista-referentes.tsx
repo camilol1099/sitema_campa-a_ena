@@ -2,19 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { Texto } from "./campos";
 import { EJES, type SlugEje } from "@/lib/ejes";
-import { porcentajeMeta } from "@/lib/fichas";
-import { filtrarReferentes, type FiltroEstado } from "@/lib/filtros";
+import { filtrarReferentes } from "@/lib/filtros";
 import type { ReferenteResumen } from "@/lib/tipos";
 import Pendiente from "./pendiente";
-import { Avatar, Pildora, Vacio } from "./ui";
-
-type Filtro = FiltroEstado;
-const FILTROS: [Filtro, string][] = [
-  ["activos", "Activos"],
-  ["todos", "Todos"],
-  ["inactivos", "Inactivos"],
-];
+import { Avatar, Vacio } from "./ui";
 
 export default function ListaReferentes({
   eje,
@@ -26,86 +19,57 @@ export default function ListaReferentes({
   seleccionado: string | null;
 }) {
   const [texto, setTexto] = useState("");
-  const [filtro, setFiltro] = useState<Filtro>("activos");
   const conf = EJES[eje];
 
-  const lista = filtrarReferentes(referentes, texto, filtro);
+  const lista = filtrarReferentes(referentes, texto);
 
   return (
     <>
-      <div className="border-b border-rule px-4 pt-3.5 pb-2.5">
-        <h2 className="text-[15px] leading-[22px] font-semibold">{conf.titulo}</h2>
-        <input
+      <div className="px-[18px] pt-[18px] pb-3">
+        <h2 className="text-[16px] leading-[22px] font-bold">{conf.titulo}</h2>
+        <p className="text-[13px] text-muted">Ordenados por personas vinculadas</p>
+        <Texto
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
           placeholder="Filtrar por nombre"
           aria-label={`Filtrar ${conf.varios} por nombre`}
-          className="mt-2.5 h-8 w-full rounded-md border border-control bg-surface px-2.5 outline-none transition hover:border-muted focus:border-primary focus:ring-2 focus:ring-primary/15"
+          className="mt-3 h-[38px]"
         />
-        <div className="mt-2.5 flex gap-1.5" role="group" aria-label="Estado">
-          {FILTROS.map(([k, t]) => (
-            <button
-              key={k}
-              type="button"
-              aria-pressed={filtro === k}
-              onClick={() => setFiltro(k)}
-              className={`cursor-pointer rounded-full border px-3 py-[3px] text-[13px] transition duration-150 motion-safe:hover:-translate-y-px motion-safe:active:scale-95 ${
-                filtro === k
-                  ? "border-ink bg-ink text-white"
-                  : "border-control bg-surface text-muted hover:border-ink hover:text-ink"
-              }`}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div className="panel-cuerpo">
         {lista.length === 0 ? (
-          <Vacio>No hay {conf.varios} con ese filtro.</Vacio>
+          <Vacio>No hay {conf.varios} con ese nombre.</Vacio>
         ) : (
-          <ul>
+          <ul className="pb-2">
             {lista.map((r) => {
               const sel = r.id === seleccionado;
-              const pct = porcentajeMeta(r.total_personas, r.meta_personas);
-              const extra = r.tipo === "empresario" ? r.empresa : r.tipo === "aliado" ? r.cargo_politico : null;
+              const extra = r.tipo === "empresario" ? r.empresa : r.tipo === "aliado" ? r.zona_influencia : null;
               return (
-                <li key={r.id} className="border-b border-rule">
+                <li key={r.id} className="mx-2.5 mb-1.5">
                   <Link
                     href={`/${eje}?referente=${r.id}`}
                     aria-current={sel ? "true" : undefined}
-                    className={`relative grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-3 transition duration-150 ${
+                    className={`relative grid grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 rounded-[16px] px-3.5 py-3 transition duration-150 ${
                       sel
-                        ? "bg-active before:absolute before:top-2.5 before:bottom-2.5 before:left-0 before:w-[3px] before:rounded-r-sm before:bg-ink"
-                        : "hover:bg-raised motion-safe:hover:pl-5"
+                        ? "bg-white shadow-neu-out-sm before:absolute before:top-3.5 before:bottom-3.5 before:-left-px before:w-1 before:rounded before:bg-grad"
+                        : "hover:bg-white/60"
                     }`}
                   >
                     <span className="row-span-2">
                       <Avatar id={r.id} nombre={r.nombre} />
                     </span>
-                    <span className="truncate font-medium">{r.nombre}</span>
-                    <span className="num row-span-2 pr-2 text-right font-medium">
+                    <span className="truncate font-semibold">{r.nombre}</span>
+                    <span className="num row-span-2 pr-2 text-right text-[15px] font-bold">
                       {r.total_personas}
-                      <small className="block text-[11px] font-normal text-muted">
-                        {r.meta_personas ? `de ${r.meta_personas}` : "sin meta"}
+                      <small className="block text-[12px] font-normal text-muted">
+                        {r.total_personas === 1 ? "persona" : "personas"}
                       </small>
                     </span>
-                    <span className="flex min-w-0 items-center gap-1.5 truncate text-[13px] text-muted">
-                      {r.estado === "inactivo" && <Pildora>Inactivo</Pildora>}
-                      <span className="truncate">
-                        {r.barrio ?? "Sin barrio"}
-                        {extra ? `, ${extra}` : ""}
-                      </span>
+                    <span className="truncate text-[13px] text-muted">
+                      {r.barrio ?? "Sin barrio"}
+                      {extra ? `, ${extra}` : ""}
                     </span>
-                    {r.meta_personas ? (
-                      <span
-                        className="col-span-2 col-start-2 mt-1.5 block h-1 overflow-hidden rounded-sm bg-rule"
-                        title={`${Math.round(pct)} % de la meta`}
-                      >
-                        <i className="block h-full bg-hue transition-[width] duration-500" style={{ width: `${pct}%` }} />
-                      </span>
-                    ) : null}
                     <Pendiente />
                   </Link>
                 </li>

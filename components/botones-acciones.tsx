@@ -19,19 +19,20 @@ import type {
 import { Aviso, Campo, Texto } from "./campos";
 import { Dialogo } from "./dialogo";
 import { FormPersona, FormReferente, SelectorReferente } from "./formularios";
-import { IconoBuscar, IconoEnlace, IconoLapiz, IconoMas, boton } from "./ui";
+import { useToast } from "./toast";
+import { Filtros, IconoBuscar, IconoEnlace, IconoLapiz, IconoMas, claseBoton } from "./ui";
 
-type Clase = keyof typeof boton;
+type Variante = "pri" | "sec";
 
 // ---------------------------------------------------------------------------
 // Referentes
 // ---------------------------------------------------------------------------
-export function BotonNuevoReferente({ tipo, clase = "primario" }: { tipo: TipoReferente; clase?: Clase }) {
+export function BotonNuevoReferente({ tipo, variante = "pri" }: { tipo: TipoReferente; variante?: Variante }) {
   const [abierto, setAbierto] = useState(false);
   const uno = EJES[slugDeTipo(tipo)].uno;
   return (
     <>
-      <button type="button" className={boton[clase]} onClick={() => setAbierto(true)}>
+      <button type="button" className={claseBoton(variante)} onClick={() => setAbierto(true)}>
         <IconoMas /> Nuevo {uno}
       </button>
       <Dialogo abierto={abierto} alCerrar={() => setAbierto(false)} titulo={`Nuevo ${uno}`} ancho="lg">
@@ -63,7 +64,7 @@ export function BotonEditarReferente({ id, tipo }: { id: string; tipo: TipoRefer
 
   return (
     <>
-      <button type="button" className={boton.secundarioSm} onClick={abrir}>
+      <button type="button" className={claseBoton("sec", "sm")} onClick={abrir}>
         <IconoLapiz /> Editar
       </button>
       <Dialogo abierto={abierto} alCerrar={cerrar} titulo={`Editar ${EJES[slugDeTipo(tipo)].uno}`} ancho="lg">
@@ -85,16 +86,16 @@ export function BotonEditarReferente({ id, tipo }: { id: string; tipo: TipoRefer
 export function BotonNuevaPersona({
   referentes,
   referenteInicial,
-  clase = "secundario",
+  variante = "sec",
 }: {
   referentes: ReferenteResumen[];
   referenteInicial?: string;
-  clase?: Clase;
+  variante?: Variante;
 }) {
   const [abierto, setAbierto] = useState(false);
   return (
     <>
-      <button type="button" className={boton[clase]} onClick={() => setAbierto(true)}>
+      <button type="button" className={claseBoton(variante)} onClick={() => setAbierto(true)}>
         <IconoMas /> Nueva persona
       </button>
       <Dialogo abierto={abierto} alCerrar={() => setAbierto(false)} titulo="Nueva persona" ancho="lg">
@@ -108,7 +109,7 @@ export function BotonEditarPersona({ persona }: { persona: Persona }) {
   const [abierto, setAbierto] = useState(false);
   return (
     <>
-      <button type="button" className={boton.primarioSm} onClick={() => setAbierto(true)}>
+      <button type="button" className={claseBoton("pri", "sm")} onClick={() => setAbierto(true)}>
         <IconoLapiz /> Editar
       </button>
       <Dialogo abierto={abierto} alCerrar={() => setAbierto(false)} titulo="Editar persona" ancho="lg">
@@ -123,6 +124,7 @@ export function BotonEditarPersona({ persona }: { persona: Persona }) {
 // ---------------------------------------------------------------------------
 function useVincular(alTerminar: () => void) {
   const router = useRouter();
+  const avisar = useToast();
   const [estado, setEstado] = useState<Resultado | null>(null);
   const [enviando, iniciar] = useTransition();
   function enviar(e: FormEvent<HTMLFormElement>) {
@@ -133,6 +135,7 @@ function useVincular(alTerminar: () => void) {
       setEstado(r);
       if (r.ok) {
         alTerminar();
+        avisar("Persona vinculada");
         if (r.href) router.push(r.href);
       }
     });
@@ -218,7 +221,7 @@ export function BotonVincularPersona({
 
   return (
     <>
-      <button type="button" className={boton.secundarioSm} onClick={() => setAbierto(true)}>
+      <button type="button" className={claseBoton("sec", "sm")} onClick={() => setAbierto(true)}>
         <IconoEnlace /> Vincular persona
       </button>
       <Dialogo
@@ -228,6 +231,16 @@ export function BotonVincularPersona({
         descripcion={`a ${referenteNombre}`}
         ancho={modo === "crear" ? "lg" : "md"}
       >
+        <Filtros
+          etiqueta="Cómo vincular"
+          opciones={[
+            ["buscar", "Buscar existente"],
+            ["crear", "Crear persona nueva"],
+          ]}
+          valor={modo}
+          alCambiar={setModo}
+          className="mb-4"
+        />
         {modo === "crear" ? (
           <FormPersona referentes={referentes} referenteInicial={referenteId} nombreInicial={/\d/.test(texto) ? "" : texto} alCerrar={cerrar} />
         ) : (
@@ -236,15 +249,15 @@ export function BotonVincularPersona({
             {elegida ? (
               <>
                 <input type="hidden" name="persona_id" value={elegida.id} />
-                <div className="flex items-center justify-between gap-3 rounded-md border border-ink/70 bg-raised px-3 py-2">
+                <div className="flex items-center justify-between gap-3 rounded-ctl bg-white px-3.5 py-2.5 shadow-neu-out-sm">
                   <div className="min-w-0">
-                    <div className="truncate font-medium">{elegida.nombre}</div>
+                    <div className="truncate font-semibold">{elegida.nombre}</div>
                     <div className="text-[13px] text-muted">
                       {elegida.cedula_final ? `Cédula •••• ${elegida.cedula_final}` : "Sin cédula"}
                       {elegida.barrio ? ` · ${elegida.barrio}` : ""}
                     </div>
                   </div>
-                  <button type="button" className={boton.secundarioSm} onClick={() => { setElegida(null); setSusVinculos(null); }}>
+                  <button type="button" className={claseBoton("sec", "sm")} onClick={() => { setElegida(null); setSusVinculos(null); }}>
                     Cambiar
                   </button>
                 </div>
@@ -255,7 +268,7 @@ export function BotonVincularPersona({
               </>
             ) : (
               <>
-                <label className="flex h-9 items-center gap-2 rounded-md border border-control px-2.5 transition focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15">
+                <label className="flex h-[42px] items-center gap-2 rounded-ctl bg-neu px-3 text-muted shadow-neu-in transition focus-within:ring-2 focus-within:ring-brand-2/55">
                   <IconoBuscar />
                   <input
                     autoFocus
@@ -263,7 +276,7 @@ export function BotonVincularPersona({
                     onChange={(e) => setTexto(e.target.value)}
                     placeholder="Nombre o últimos dígitos de la cédula"
                     aria-label="Buscar persona"
-                    className="min-w-0 flex-1 bg-transparent outline-none"
+                    className="min-w-0 flex-1 bg-transparent text-ink outline-none placeholder:text-faint"
                   />
                 </label>
                 {texto.trim().length >= 2 && resultados && (
@@ -273,9 +286,9 @@ export function BotonVincularPersona({
                         <button
                           type="button"
                           onClick={() => setElegida(p)}
-                          className="w-full cursor-pointer rounded-md border border-transparent px-3 py-2 text-left transition hover:border-control hover:bg-raised motion-safe:hover:translate-x-0.5"
+                          className="w-full cursor-pointer rounded-[12px] px-3 py-2 text-left transition hover:bg-white hover:shadow-neu-out-sm"
                         >
-                          <div className="truncate font-medium">{p.nombre}</div>
+                          <div className="truncate font-semibold">{p.nombre}</div>
                           <div className="truncate text-[13px] text-muted">
                             {p.cedula_final ? `•••• ${p.cedula_final}` : "Sin cédula"}
                             {p.referente_nombre ? ` · con ${p.referente_nombre}` : " · sin referente"}
@@ -286,18 +299,15 @@ export function BotonVincularPersona({
                     {resultados.length === 0 && <li className="px-3 py-2 text-muted">No se encontró a nadie.</li>}
                   </ul>
                 )}
-                <button type="button" className={`${boton.secundario} w-full`} onClick={() => setModo("crear")}>
-                  <IconoMas /> Crear persona nueva
-                </button>
               </>
             )}
             {estado?.mensaje && <Aviso>{estado.mensaje}</Aviso>}
             {elegida && (
-              <div className="mt-2 flex justify-end gap-2 border-t border-rule pt-4">
-                <button type="button" onClick={cerrar} className={boton.secundario}>
+              <div className="mt-2 flex justify-end gap-2 border-t border-linea pt-4">
+                <button type="button" onClick={cerrar} className={claseBoton("sec")}>
                   Cancelar
                 </button>
-                <button type="submit" disabled={enviando || yaEsta || !susVinculos} className={boton.primario}>
+                <button type="submit" disabled={enviando || yaEsta || !susVinculos} className={claseBoton("pri")}>
                   {enviando ? "Vinculando..." : "Vincular"}
                 </button>
               </div>
@@ -326,7 +336,7 @@ export function BotonVincularAReferente({
 
   return (
     <>
-      <button type="button" className={boton.secundarioSm} onClick={() => setAbierto(true)}>
+      <button type="button" className={claseBoton("sec", "sm")} onClick={() => setAbierto(true)}>
         <IconoEnlace /> Vincular a otro referente
       </button>
       <Dialogo abierto={abierto} alCerrar={cerrar} titulo="Vincular a otro referente">
@@ -340,11 +350,11 @@ export function BotonVincularAReferente({
             <Texto name="coordinador" />
           </Campo>
           {estado?.mensaje && <Aviso>{estado.mensaje}</Aviso>}
-          <div className="mt-2 flex justify-end gap-2 border-t border-rule pt-4">
-            <button type="button" onClick={cerrar} className={boton.secundario}>
+          <div className="mt-2 flex justify-end gap-2 border-t border-linea pt-4">
+            <button type="button" onClick={cerrar} className={claseBoton("sec")}>
               Cancelar
             </button>
-            <button type="submit" disabled={enviando} className={boton.primario}>
+            <button type="submit" disabled={enviando} className={claseBoton("pri")}>
               {enviando ? "Vinculando..." : "Vincular"}
             </button>
           </div>

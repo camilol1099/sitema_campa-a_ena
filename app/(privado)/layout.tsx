@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import BarraSuperior from "@/components/barra-superior";
-import { todosLosReferentes } from "@/lib/datos";
+import { CatalogosProvider } from "@/components/catalogo";
+import { ToastProvider } from "@/components/toast";
+import { catalogos as cargarCatalogos, todosLosReferentes } from "@/lib/datos";
 import { SLUGS, slugDeTipo, type SlugEje } from "@/lib/ejes";
 import { crearClienteServidor } from "@/lib/supabase/server";
 
@@ -22,14 +24,16 @@ export default async function LayoutPrivado({ children }: LayoutProps<"/">) {
     redirect("/login");
   }
 
-  const referentes = await todosLosReferentes();
+  const [referentes, catalogos] = await Promise.all([todosLosReferentes(), cargarCatalogos()]);
   const conteos = Object.fromEntries(SLUGS.map((s) => [s, 0])) as Record<SlugEje, number>;
   for (const r of referentes) conteos[slugDeTipo(r.tipo)]++;
 
   return (
-    <>
-      <BarraSuperior conteos={conteos} correo={String(data.claims.email ?? "")} />
-      {children}
-    </>
+    <ToastProvider>
+      <CatalogosProvider valor={catalogos}>
+        <BarraSuperior conteos={conteos} correo={String(data.claims.email ?? "")} />
+        {children}
+      </CatalogosProvider>
+    </ToastProvider>
   );
 }

@@ -1,54 +1,48 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { cerrarSesion } from "@/app/login/acciones";
 import { EJES, SLUGS, nombreTipo, type SlugEje } from "@/lib/ejes";
+import isotipo from "@/public/marca/isotipo-blanco.png";
 import { rutaPersona } from "@/lib/rutas";
 import { crearClienteNavegador } from "@/lib/supabase/client";
 import type { ResultadoBusqueda } from "@/lib/tipos";
-import { IconoBuscar } from "./ui";
+import { Boton, IconoBuscar, Pestanas, Vidrio } from "./ui";
 
 function Marca() {
   return (
-    <Link href="/lideres" className="flex flex-none items-center gap-2.5 rounded-md">
-      <svg width="32" height="32" viewBox="0 0 34 34" aria-hidden="true">
-        <rect width="34" height="34" rx="8" fill="#214820" />
-        <path d="M17 7v20M17 13l-6-4M17 13l6-4M17 19l-7-3M17 19l7-3" stroke="#fff" strokeWidth="2" strokeLinecap="round" fill="none" />
-        <circle cx="17" cy="27" r="2" fill="#48a733" />
-      </svg>
-      <span className="hidden font-semibold leading-4 sm:block">Jesús Perpiñán</span>
+    <Link href="/panel" className="flex flex-none items-center gap-2.5 rounded-ctl">
+      <span className="flex h-10 w-10 items-center justify-center rounded-[13px] bg-grad shadow-[0_8px_16px_-8px_rgba(33,72,32,.7),inset_0_1px_0_rgba(255,255,255,.35)]">
+        <Image src={isotipo} alt="" className="h-7 w-7" />
+      </span>
+      <span className="hidden sm:block">
+        <b className="block text-[14px] leading-4 font-bold tracking-[-.01em]">Jesús Perpiñán</b>
+        <span className="block text-[12px] leading-4 text-muted max-[859px]:hidden">Sistema de campaña</span>
+      </span>
     </Link>
   );
 }
 
-// Pestañas de los ejes: con borde y color, no solo texto.
-function Pestanas({ conteos }: { conteos: Record<SlugEje, number> }) {
+// "Panel" y luego los ejes, con su número de referentes.
+function PestanasSecciones({ conteos }: { conteos: Record<SlugEje, number> }) {
   const ruta = usePathname();
   return (
-    <nav aria-label="Ejes de la campaña" className="flex gap-1.5 overflow-x-auto max-[859px]:order-4 max-[859px]:w-full max-[859px]:pb-2">
-      {SLUGS.map((slug) => {
-        const activa = ruta === `/${slug}`;
-        return (
-          <Link
-            key={slug}
-            href={`/${slug}`}
-            aria-current={activa ? "page" : undefined}
-            className={`flex h-9 flex-none items-center gap-2 rounded-md border px-3 transition duration-150 motion-safe:hover:-translate-y-px ${
-              activa
-                ? "border-ink bg-ink font-medium text-white"
-                : "border-control bg-surface text-muted hover:border-ink hover:text-ink"
-            }`}
-          >
-            {EJES[slug].titulo}
-            <span className={`num rounded-full px-1.5 text-[12px] leading-[18px] ${activa ? "bg-white/20 text-white" : "bg-active text-muted"}`}>
-              {conteos[slug]}
-            </span>
-          </Link>
-        );
-      })}
-    </nav>
+    <Pestanas
+      etiqueta="Secciones de la campaña"
+      className="max-[859px]:order-4 max-[859px]:w-full"
+      items={[
+        { href: "/panel", texto: "Panel", activa: ruta === "/panel" },
+        ...SLUGS.map((slug) => ({
+          href: `/${slug}`,
+          texto: EJES[slug].titulo,
+          conteo: conteos[slug],
+          activa: ruta === `/${slug}`,
+        })),
+      ]}
+    />
   );
 }
 
@@ -109,8 +103,8 @@ function Buscador() {
   const lista = abierto && vigentes;
 
   return (
-    <div className="relative ml-auto w-[300px] max-[859px]:order-3 max-[859px]:ml-0 max-[859px]:w-full">
-      <label className="flex h-9 items-center gap-2 rounded-md border border-control bg-surface px-2.5 text-muted transition hover:border-muted focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15">
+    <div className="relative ml-auto w-[310px] max-[859px]:order-3 max-[859px]:ml-0 max-[859px]:w-full">
+      <label className="flex h-[42px] items-center gap-2 rounded-ctl bg-neu px-3 text-muted shadow-neu-in transition focus-within:ring-2 focus-within:ring-brand-2/55">
         <IconoBuscar />
         <input
           ref={entrada}
@@ -143,13 +137,13 @@ function Buscador() {
           aria-controls="resultados-busqueda"
           className="min-w-0 flex-1 bg-transparent text-ink outline-none"
         />
-        <kbd className="rounded border border-border px-1.5 text-[11px] text-muted">/</kbd>
+        <kbd className="rounded-md bg-white px-1.5 text-[12px] text-muted shadow-neu-out-sm">/</kbd>
       </label>
       {lista && (
         <ul
           id="resultados-busqueda"
           role="listbox"
-          className="aparecer absolute right-0 left-0 z-20 mt-1 max-h-80 overflow-auto rounded-lg border border-border bg-surface p-1 shadow-[0_16px_40px_-16px_rgba(20,26,18,.4)]"
+          className="aparecer absolute right-0 left-0 z-20 mt-2 max-h-80 overflow-auto rounded-card border border-glass-line bg-glass-strong p-1.5 shadow-vidrio backdrop-vidrio"
         >
           {vigentes.length === 0 && <li className="px-3 py-2 text-muted">No se encontró a nadie.</li>}
           {vigentes.map((p, i) => (
@@ -159,9 +153,9 @@ function Buscador() {
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => abrir(p)}
                 onMouseEnter={() => setMarcado(i)}
-                className={`w-full cursor-pointer rounded-md px-3 py-2 text-left transition ${i === marcado ? "bg-active" : ""}`}
+                className={`w-full cursor-pointer rounded-[12px] px-3 py-2 text-left transition ${i === marcado ? "bg-white shadow-neu-out-sm" : ""}`}
               >
-                <div className="truncate font-medium">{p.nombre}</div>
+                <div className="truncate font-semibold">{p.nombre}</div>
                 <div className="truncate text-[13px] text-muted">
                   {p.cedula_final ? `•••• ${p.cedula_final}` : "Sin cédula"}
                   {p.referente_tipo ? ` · ${nombreTipo(p.referente_tipo)}: ${p.referente_nombre}` : " · Sin referente"}
@@ -200,20 +194,17 @@ function MenuUsuario({ correo }: { correo: string }) {
         onClick={() => setAbierto((a) => !a)}
         aria-expanded={abierto}
         aria-label="Menú de la cuenta"
-        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-control bg-active text-[12px] font-semibold transition hover:border-ink motion-safe:hover:scale-105"
+        className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-ctl bg-neu text-[12px] font-bold text-brand shadow-neu-out-sm transition active:shadow-neu-in"
       >
         {correo.slice(0, 2).toUpperCase()}
       </button>
       {abierto && (
-        <div className="aparecer absolute right-0 z-20 mt-2 w-60 rounded-lg border border-border bg-surface p-2 shadow-[0_16px_40px_-16px_rgba(20,26,18,.4)]">
+        <div className="aparecer absolute right-0 z-20 mt-2 w-64 rounded-card border border-glass-line bg-glass-strong p-2.5 shadow-vidrio backdrop-vidrio">
           <p className="truncate px-2 py-1 text-[13px] text-muted">{correo}</p>
           <form action={cerrarSesion}>
-            <button
-              type="submit"
-              className="mt-1 w-full cursor-pointer rounded-md border border-control px-2 py-1.5 text-left transition hover:border-ink hover:bg-raised"
-            >
+            <Boton type="submit" tam="sm" className="mt-1 w-full">
               Cerrar sesión
-            </button>
+            </Boton>
           </form>
         </div>
       )}
@@ -229,11 +220,17 @@ export default function BarraSuperior({
   correo: string;
 }) {
   return (
-    <header className="sticky top-0 z-10 flex h-[60px] items-center gap-6 border-b border-border bg-surface px-6 max-[859px]:h-auto max-[859px]:flex-wrap max-[859px]:gap-3 max-[859px]:px-4 max-[859px]:pt-2">
-      <Marca />
-      <Pestanas conteos={conteos} />
-      <Buscador />
-      <MenuUsuario correo={correo} />
-    </header>
+    <div className="franja-barra sticky top-0 z-10 px-[18px] pt-3 max-[859px]:px-2 max-[859px]:pt-2">
+      <Vidrio
+        como="header"
+        barra
+        className="flex h-[66px] items-center gap-[22px] rounded-[22px] pr-3 pl-4 max-[859px]:h-auto max-[859px]:flex-wrap max-[859px]:gap-2.5 max-[859px]:p-2.5"
+      >
+        <Marca />
+        <PestanasSecciones conteos={conteos} />
+        <Buscador />
+        <MenuUsuario correo={correo} />
+      </Vidrio>
+    </div>
   );
 }

@@ -1,51 +1,125 @@
 @import "tailwindcss";
 
-/* Tokens de DESIGN.md (achromatic ledger con la marca) */
-@theme inline {
-  --color-ground: #f2f5f2; /* fondo salvia */
-  --color-surface: #ffffff;
-  --color-raised: #f7f8f6;
-  --color-active: #eceee9;
-  --color-border: #e4e7e2;
-  --color-rule: #eff1ed;
-  --color-control: #cfd4cc;
-  --color-ink: #141a12;
-  --color-muted: #5d655a;
-  --color-faint: #646c61;
-  --color-hue: #2f8a24; /* solo barras de meta */
-  --color-hue-pale: #e7f2e3;
-  --color-primary: #214820; /* botón principal */
-  --color-primary-hover: #2c5b2a;
-  --color-sec: #e5e8e3; /* botón secundario */
-  --color-sec-hover: #dadfd7;
-  --color-warn: #fdf0e9;
-  --color-warn-ink: #9a3412;
-  --color-note: #fff8e1;
-  --color-note-ink: #7a5200;
+/* =====================================================================
+   Tokens de DESIGN.md (estilo "Vidrio verde"). Se definen UNA sola vez
+   aquí; los componentes los usan por nombre (bg-neu, shadow-neu-in,
+   rounded-pane...). Tailwind v4 no usa tailwind.config: el bloque
+   @theme de abajo cumple esa función.
+   ===================================================================== */
+:root {
+  --bg: #e6eee5;
+  --ink: #10200e;
+  --muted: #4c5a49;
+  --faint: #5f6c5c;
+  --brand: #214820;
+  --brand-2: #48a733;
+  --accent: #e8431e;
+  --glass: rgba(255, 255, 255, 0.74);
+  --glass-strong: rgba(255, 255, 255, 0.9);
+  --glass-bar: rgba(244, 248, 243, 0.94); /* barra superior: casi opaca, el contenido no se cruza al bajar */
+  --glass-line: rgba(255, 255, 255, 0.8);
+  --blur: blur(22px) saturate(165%);
+  --shadow: 0 18px 40px -18px rgba(16, 48, 14, 0.3), 0 2px 6px -2px rgba(16, 48, 14, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --neu-bg: #edf2ec;
+  --neu-out: 5px 5px 12px rgba(33, 72, 32, 0.13), -5px -5px 12px rgba(255, 255, 255, 0.9);
+  --neu-out-sm: 3px 3px 7px rgba(33, 72, 32, 0.12), -3px -3px 7px rgba(255, 255, 255, 0.9);
+  --neu-in: inset 3px 3px 7px rgba(33, 72, 32, 0.13), inset -3px -3px 7px rgba(255, 255, 255, 0.95);
+  --grad: linear-gradient(135deg, #4fb437 0%, #2f7a26 45%, #214820 100%);
+  --warn-bg: #fde4d9;
+  --warn-ink: #9a3412;
+  --note-bg: #fff1bf;
+  --note-ink: #6f4a00;
+  --r-pane: 24px;
+  --r-card: 18px;
+  --r-ctl: 14px;
+  --gap: 18px;
+}
 
-  /* Marca (login) */
-  --color-verde: #214820;
-  --color-hoja: #48a733;
-  --color-alerta: #e8431e;
+@theme inline {
+  --color-bg: var(--bg);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-brand: var(--brand);
+  --color-brand-2: var(--brand-2);
+  --color-accent: var(--accent);
+  --color-glass: var(--glass);
+  --color-glass-strong: var(--glass-strong);
+  --color-glass-bar: var(--glass-bar);
+  --color-glass-line: var(--glass-line);
+  --color-neu: var(--neu-bg);
+  --color-warn: var(--warn-bg);
+  --color-warn-ink: var(--warn-ink);
+  --color-note: var(--note-bg);
+  --color-note-ink: var(--note-ink);
+  --color-linea: rgba(33, 72, 32, 0.08); /* divisores finos dentro de tarjetas */
+
+  --radius-pane: var(--r-pane);
+  --radius-card: var(--r-card);
+  --radius-ctl: var(--r-ctl);
+
+  --shadow-vidrio: var(--shadow);
+  --shadow-neu-out: var(--neu-out);
+  --shadow-neu-out-sm: var(--neu-out-sm);
+  --shadow-neu-in: var(--neu-in);
 
   --font-sans: var(--font-poppins);
 }
 
+/* Degradado de la marca (botón principal, barras, logo) */
+@utility bg-grad {
+  background-image: var(--grad);
+}
+/* Vidrio esmerilado: SOLO en superficies grandes (ver componente Vidrio) */
+/* (Solo la propiedad estándar: el compilador agrega -webkit- para Safari.
+   Si se escriben las dos, el minificador deja solo la -webkit- y Chrome no la aplica.) */
+@utility backdrop-vidrio {
+  backdrop-filter: var(--blur);
+}
+
+/* ---------- base ---------- */
+html,
 body {
-  background: var(--color-ground);
-  color: var(--color-ink);
+  min-height: 100%;
+}
+body {
+  background: var(--bg);
+  color: var(--ink);
   font-family: var(--font-poppins), system-ui, sans-serif;
   font-size: 14px;
   line-height: 20px;
+  -webkit-font-smoothing: antialiased;
 }
-
 :focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--brand-2);
   outline-offset: 2px;
 }
-
 .num {
   font-variant-numeric: tabular-nums;
+}
+
+/* Fondo: manchas de la marca, fijas, un solo elemento sin animación */
+:root {
+  --manchas:
+    radial-gradient(60vw 60vw at -10% -20%, rgba(72, 167, 51, 0.2), transparent 60%),
+    radial-gradient(55vw 55vw at 110% 120%, rgba(33, 72, 32, 0.16), transparent 60%),
+    radial-gradient(30vw 30vw at 92% 4%, rgba(232, 67, 30, 0.07), transparent 65%),
+    radial-gradient(40vw 40vw at 40% 70%, rgba(168, 214, 150, 0.22), transparent 65%);
+}
+.fondo {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: var(--manchas), var(--bg);
+}
+/* Franja fija detrás de la barra superior: pinta el mismo fondo (fijo a la
+   ventana, así no se nota la unión) para que el contenido no se vea pasar
+   por encima ni alrededor de la barra al bajar. */
+.franja-barra {
+  background: var(--manchas), var(--bg);
+  background-attachment: fixed;
 }
 
 /* Entrada suave del contenido de cada panel */
@@ -63,68 +137,75 @@ body {
   animation: aparecer 180ms ease-out both;
 }
 @media (prefers-reduced-motion: reduce) {
-  .aparecer {
-    animation: none;
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
   }
+}
+
+/* Barras de desplazamiento finas en los paneles */
+.panel-cuerpo {
+  overflow: auto;
+  flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(33, 72, 32, 0.2) transparent;
 }
 
 /* ---------- espacio de trabajo en tres paneles ---------- */
 .trabajo {
   display: grid;
-  grid-template-columns: 344px minmax(0, 1fr) 392px;
-  gap: 16px;
+  grid-template-columns: 350px minmax(0, 1fr) 396px;
+  gap: var(--gap);
   align-items: start;
 }
 .panel {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 236px);
-  min-height: 480px;
-}
-.panel-cuerpo {
-  overflow: auto;
-  flex: 1;
+  height: calc(100vh - 318px);
+  min-height: 540px;
+  overflow: hidden;
 }
 .solo-movil {
   display: none;
 }
 
-/* árbol de personas: tronco vertical y una rama por fila */
+/* árbol de personas: tronco con degradado verde y una rama por fila */
 .arbol {
   position: relative;
-  padding: 0 12px 16px 34px;
+  padding: 0 12px 18px 38px;
 }
 .arbol::before {
   content: "";
   position: absolute;
-  left: 23px;
+  left: 25px;
   top: 0;
   bottom: 30px;
-  width: 1.5px;
-  background: #c9cec6;
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(rgba(72, 167, 51, 0.55), rgba(33, 72, 32, 0.15));
 }
 .arbol > li {
   position: relative;
-  margin: 2px 0;
+  margin: 3px 0;
 }
 .arbol > li::before {
   content: "";
   position: absolute;
-  left: -11px;
+  left: -13px;
   top: 23px;
   width: 11px;
-  height: 1.5px;
-  background: #c9cec6;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(72, 167, 51, 0.4);
 }
 
 /* 860–1280px: dos paneles; la ficha baja a ancho completo */
 @media (max-width: 1280px) {
   .trabajo {
-    grid-template-columns: 320px minmax(0, 1fr);
+    grid-template-columns: 330px minmax(0, 1fr);
   }
   .panel-ficha {
     grid-column: 1 / -1;

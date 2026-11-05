@@ -8,11 +8,14 @@ import {
   guardarReferente,
   type Resultado,
 } from "@/app/(privado)/acciones";
-import { CAMPOS_TIPO, EJES, VERIFICACIONES, slugDeTipo, type TipoReferente } from "@/lib/ejes";
+import { CAMPOS_TIPO, EJES, VERIFICACIONES, nombreTipo, slugDeTipo, type TipoReferente } from "@/lib/ejes";
 import type { Persona, ReferenteEdicion, ReferenteResumen } from "@/lib/tipos";
+import { leerCatalogo, type Catalogo, type Catalogos } from "@/lib/catalogos";
 import { erroresCedula } from "@/lib/validacion";
 import { AreaTexto, Aviso, Campo, Seccion, Seleccion, Texto } from "./campos";
-import { boton } from "./ui";
+import { ListaCatalogo, useCatalogos } from "./catalogo";
+import { useToast } from "./toast";
+import { claseBoton } from "./ui";
 
 // Envía el formulario sin que React lo limpie (si hay errores, los datos se conservan).
 function useEnvio(
@@ -50,6 +53,18 @@ function useEnvio(
   return { estado, enviando, enviar, formRef, errores: estado?.errores ?? {} };
 }
 
+// Validación en el navegador: cédula y campos de lista (barrio, municipio, puesto).
+// El servidor vuelve a validar todo.
+function validador(catalogos: Catalogos, cats: Catalogo[]) {
+  return (fd: FormData) => {
+    const errores = erroresCedula(fd);
+    for (const c of cats) {
+      const r = leerCatalogo(fd, c, catalogos[c]);
+      if (r.error) errores[c] = r.error;
+    }
+    return errores;
+  };
+}
 
 // Mensaje de "ya existe": ofrece abrir el registro en vez de duplicarlo.
 function YaExiste({ r, alAbrir }: { r: Resultado | null; alAbrir: () => void }) {
@@ -60,7 +75,7 @@ function YaExiste({ r, alAbrir }: { r: Resultado | null; alAbrir: () => void }) 
         <span>
           Esta cédula ya es de <b className="font-medium">{r.existente.nombre}</b>.
         </span>
-        <Link href={r.existente.href} onClick={alAbrir} className={boton.secundarioSm}>
+        <Link href={r.existente.href} onClick={alAbrir} className={claseBoton("sec", "sm")}>
           Abrir a {r.existente.nombre.split(" ")[0]}
         </Link>
       </div>
@@ -78,11 +93,11 @@ function Pie({
   texto: string;
 }) {
   return (
-    <div className="mt-5 flex justify-end gap-2 border-t border-rule pt-4">
-      <button type="button" onClick={alCancelar} className={boton.secundario}>
+    <div className="mt-5 flex justify-end gap-2 border-t border-linea pt-4">
+      <button type="button" onClick={alCancelar} className={claseBoton("sec")}>
         Cancelar
       </button>
-      <button type="submit" disabled={enviando} className={boton.primario}>
+      <button type="submit" disabled={enviando} className={claseBoton("pri")}>
         {enviando ? "Guardando..." : texto}
       </button>
     </div>
@@ -102,13 +117,16 @@ export function FormReferente({
   alCerrar: () => void;
 }) {
   const router = useRouter();
+  const avisar = useToast();
+  const catalogos = useCatalogos();
   const { estado, enviando, enviar, errores, formRef } = useEnvio(
     guardarReferente,
     (r) => {
       alCerrar();
+      avisar(referente ? "Cambios guardados" : `${nombreTipo(tipo)} creado`);
       if (!referente && r.href) router.push(r.href);
     },
-    erroresCedula,
+    validador(catalogos, ["barrio", "municipio"]),
   );
   const v = referente;
 
@@ -129,28 +147,19 @@ export function FormReferente({
         <Campo etiqueta="Cédula" error={errores.cedula} ayuda="Solo números">
           <Texto name="cedula" defaultValue={v?.cedula ?? ""} inputMode="numeric" autoComplete="off" invalido={!!errores.cedula} />
         </Campo>
-        <Campo etiqueta="Estado">
-          <Seleccion name="estado" defaultValue={v?.estado ?? "activo"}>
-            <option value="activo">Activo</option>
-            <option value="inactivo">Inactivo</option>
-          </Seleccion>
+        <Campo etiqueta="Barrio" error={errores.barrio}>
+          <ListaCatalogo cat="barrio" defaultValue={v?.barrio} invalido={!!errores.barrio} />
         </Campo>
-        <Campo etiqueta="Barrio">
-          <Texto name="barrio" defaultValue={v?.barrio ?? ""} />
-        </Campo>
-        <Campo etiqueta="Municipio">
-          <Texto name="municipio" defaultValue={v?.municipio ?? ""} />
-        </Campo>
-        <Campo etiqueta="Meta de personas" error={errores.meta_personas}>
-          <Texto name="meta_personas" defaultValue={v?.meta_personas ?? ""} inputMode="numeric" invalido={!!errores.meta_personas} />
+        <Campo etiqueta="Municipio" error={errores.municipio}>
+          <ListaCatalogo cat="municipio" defaultValue={v ? v.municipio : "Valledupar"} invalido={!!errores.municipio} />
         </Campo>
       </Seccion>
 
       {CAMPOS_TIPO[tipo].length > 0 && (
         <Seccion titulo={tipo === "empresario" ? "Empresa" : "Política"}>
           {CAMPOS_TIPO[tipo].map(({ campo, etiqueta }) => (
-            <Campo key={campo} etiqueta={etiqueta} ancho={campo === "empresa" || campo === "partido_movimiento" ? "completo" : "medio"}>
-              <Texto name={campo} defaultValue={v?.[campo] ?? ""} />
+            <Campo key={campo} etiqueta={etiqueta} error={errores[campo]} ancho="completo">
+              <Texto name={campo} defaultValue={v?.[campo] ?? ""} maxLength={120} invalido={!!errores[campo]} />
             </Campo>
           ))}
         </Seccion>
@@ -162,9 +171,6 @@ export function FormReferente({
         </Campo>
         <Campo etiqueta="Dirección">
           <Texto name="direccion" defaultValue={v?.direccion ?? ""} />
-        </Campo>
-        <Campo etiqueta="Notas" ancho="completo">
-          <AreaTexto name="notas" defaultValue={v?.notas ?? ""} />
         </Campo>
       </Seccion>
 
@@ -191,13 +197,16 @@ export function FormPersona({
   alCerrar: () => void;
 }) {
   const router = useRouter();
+  const avisar = useToast();
+  const catalogos = useCatalogos();
   const { estado, enviando, enviar, errores, formRef } = useEnvio(
     guardarPersona,
     (r) => {
       alCerrar();
+      avisar(persona ? "Cambios guardados" : "Persona creada");
       if (!persona && r.href) router.push(r.href);
     },
-    erroresCedula,
+    validador(catalogos, ["barrio", "puesto_votacion"]),
   );
   const v = persona;
   const [autorizo, setAutorizo] = useState(v?.autorizacion_datos ?? false);
@@ -224,8 +233,8 @@ export function FormPersona({
         <Campo etiqueta="Dirección">
           <Texto name="direccion" defaultValue={v?.direccion ?? ""} />
         </Campo>
-        <Campo etiqueta="Barrio">
-          <Texto name="barrio" defaultValue={v?.barrio ?? ""} />
+        <Campo etiqueta="Barrio" error={errores.barrio}>
+          <ListaCatalogo cat="barrio" defaultValue={v?.barrio} invalido={!!errores.barrio} />
         </Campo>
       </Seccion>
 
@@ -240,8 +249,8 @@ export function FormPersona({
             ))}
           </Seleccion>
         </Campo>
-        <Campo etiqueta="Puesto de votación">
-          <Texto name="puesto_votacion" defaultValue={v?.puesto_votacion ?? ""} />
+        <Campo etiqueta="Puesto de votación" error={errores.puesto_votacion}>
+          <ListaCatalogo cat="puesto_votacion" defaultValue={v?.puesto_votacion} invalido={!!errores.puesto_votacion} />
         </Campo>
         <Campo etiqueta="Mesa" error={errores.mesa}>
           <Texto name="mesa" defaultValue={v?.mesa ?? ""} inputMode="numeric" invalido={!!errores.mesa} />
@@ -249,13 +258,13 @@ export function FormPersona({
       </Seccion>
 
       <Seccion titulo="Autorización y notas">
-        <label className="flex cursor-pointer items-center gap-2 rounded-md border border-control px-3 py-2 transition hover:border-ink sm:col-span-2">
+        <label className="flex cursor-pointer items-center gap-2.5 rounded-ctl bg-neu px-3.5 py-2.5 shadow-neu-out-sm transition sm:col-span-2">
           <input
             type="checkbox"
             name="autorizacion_datos"
             checked={autorizo}
             onChange={(e) => setAutorizo(e.target.checked)}
-            className="h-4 w-4 accent-primary"
+            className="h-4 w-4 accent-brand"
           />
           <span>Autorizó el tratamiento de sus datos (Ley 1581)</span>
         </label>
@@ -307,7 +316,6 @@ export function SelectorReferente({
             .map((r) => (
               <option key={r.id} value={r.id}>
                 {r.nombre}
-                {r.estado === "inactivo" ? " (inactivo)" : ""}
               </option>
             ))}
         </optgroup>

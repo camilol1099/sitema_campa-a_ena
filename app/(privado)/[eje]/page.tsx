@@ -5,6 +5,7 @@ import { BotonNuevaPersona, BotonNuevoReferente } from "@/components/botones-acc
 import FichaPersona from "@/components/ficha-persona";
 import ListaReferentes from "@/components/lista-referentes";
 import PanelReferente from "@/components/panel-referente";
+import { IconoAlerta, IconoCheck, IconoCruce, IconoPersonas, Vidrio } from "@/components/ui";
 import {
   cifrasEje,
   persona as cargarPersona,
@@ -13,7 +14,6 @@ import {
   todosLosReferentes,
 } from "@/lib/datos";
 import { EJES, esSlugEje, esUuid } from "@/lib/ejes";
-import { cuantosCumplenMeta } from "@/lib/fichas";
 import { fmt } from "@/lib/formato";
 
 // Espera los datos de la sesión antes de mostrarse (app privada, un solo usuario).
@@ -47,57 +47,57 @@ export default async function PaginaEje({ params, searchParams }: PageProps<"/[e
 
   const delEje = referentes.filter((r) => r.tipo === conf.tipo);
   const refDelEje = ref && ref.tipo === conf.tipo ? ref : null;
-  const cumplen = cuantosCumplenMeta(delEje);
   const paso = per ? 3 : refDelEje ? 2 : 1;
 
+  // El que más personas aporta (para la frase con el hallazgo).
+  const top = delEje.reduce<(typeof delEje)[number] | null>(
+    (m, r) => (r.total_personas > (m?.total_personas ?? 0) ? r : m),
+    null,
+  );
+
   const kpis = [
-    { etiqueta: "Personas en este eje", valor: cifras.personas_eje, de: cifras.total_personas },
-    { etiqueta: "Votan en Valledupar", valor: cifras.votan_valledupar },
-    { etiqueta: "Con datos por completar", valor: cifras.por_completar },
-    { etiqueta: "También en otro eje", valor: cifras.en_otro_eje },
+    { etiqueta: "Personas en este eje", valor: cifras.personas_eje, nota: `de ${fmt(cifras.total_personas)} registradas`, icono: <IconoPersonas /> },
+    { etiqueta: "Votan en Valledupar", valor: cifras.votan_valledupar, nota: "verificadas en el censo", icono: <IconoCheck /> },
+    { etiqueta: "Datos por completar", valor: cifras.por_completar, nota: "sin cédula, barrio o verificación", icono: <IconoAlerta /> },
+    { etiqueta: "También en otro eje", valor: cifras.en_otro_eje, nota: "tienen referente en otro eje", icono: <IconoCruce /> },
   ];
 
   return (
-    <main className="px-6 pt-6 pb-8 max-[859px]:p-4">
-      <div className="mb-4 flex items-end justify-between gap-6 max-[859px]:flex-col max-[859px]:items-start">
+    <main className="px-[18px] pt-[26px] pb-9 max-[859px]:px-2 max-[859px]:pt-[18px]">
+      <div className="mx-1.5 mb-(--gap) flex items-end justify-between gap-6 max-[859px]:mb-3.5 max-[859px]:flex-col max-[859px]:items-start">
         <div>
-          <h1 className="text-[24px] leading-8 font-semibold tracking-[-.01em]">{conf.titulo}</h1>
-          <p className="num mt-1 text-[15px] text-muted">
-            <b className="font-medium text-ink">{delEje.length}</b> {conf.varios} ·{" "}
-            <b className="font-medium text-ink">{fmt(cifras.personas_eje)}</b> personas
-            {cumplen > 0 && (
-              <>
-                {" "}· <b className="font-medium text-ink">{cumplen}</b> {cumplen === 1 ? "cumple" : "cumplen"} su meta
-              </>
-            )}
+          <h1 className="text-[30px] leading-[38px] font-bold tracking-[-.02em] max-[859px]:text-[24px] max-[859px]:leading-8">{conf.titulo}</h1>
+          <p className="num mt-1.5 max-w-[72ch] text-[15px] leading-[23px] text-muted">
+            <b className="font-semibold text-ink">
+              {delEje.length} {delEje.length === 1 ? conf.uno : conf.varios} {delEje.length === 1 ? "reúne" : "reúnen"} {fmt(cifras.personas_eje)} personas.
+            </b>{" "}
+            {top && `${top.nombre} es quien más aporta, con ${fmt(top.total_personas)}.`}
           </p>
         </div>
-        <div className="flex flex-none gap-2">
+        <div className="flex flex-none gap-2.5">
           <BotonNuevaPersona referentes={referentes} referenteInicial={refDelEje?.id} />
           <BotonNuevoReferente tipo={conf.tipo} />
         </div>
       </div>
 
-      <section aria-label="Cifras del eje" className="mb-4 grid grid-cols-4 rounded-lg border border-border bg-surface max-[859px]:grid-cols-2">
-        {kpis.map((k, i) => (
-          <div
-            key={k.etiqueta}
-            className={`px-[18px] py-3 ${i > 0 ? "border-l border-border" : ""} max-[859px]:[&:nth-child(3)]:border-l-0 max-[859px]:[&:nth-child(n+3)]:border-t`}
-          >
-            <div className="text-[13px] text-muted">{k.etiqueta}</div>
-            <div className="num mt-0.5 text-[24px] leading-8 font-medium">
-              {fmt(k.valor)}
-              {k.de !== undefined && <span className="ml-1 text-[13px] font-normal text-muted">de {fmt(k.de)}</span>}
-            </div>
-          </div>
+      <section aria-label="Cifras del eje" className="mb-(--gap) grid grid-cols-4 gap-(--gap) max-[1280px]:grid-cols-2 max-[859px]:gap-2.5">
+        {kpis.map((k) => (
+          <Vidrio key={k.etiqueta} className="relative overflow-hidden rounded-card px-[18px] py-4">
+            <span className="absolute top-4 right-4 flex h-[34px] w-[34px] items-center justify-center rounded-[12px] bg-neu text-brand shadow-neu-out-sm">
+              {k.icono}
+            </span>
+            <div className="pr-10 text-[13px] font-medium text-muted">{k.etiqueta}</div>
+            <div className="num mt-1 text-[30px] leading-[38px] font-bold tracking-[-.02em] max-[859px]:text-[24px]">{fmt(k.valor)}</div>
+            <div className="text-[13px] text-muted">{k.nota}</div>
+          </Vidrio>
         ))}
       </section>
 
       <section className="trabajo" data-paso={paso}>
-        <div className="panel panel-lista">
+        <Vidrio fuerte className="panel panel-lista rounded-pane">
           <ListaReferentes eje={eje} referentes={delEje} seleccionado={refDelEje?.id ?? null} />
-        </div>
-        <div className="panel panel-ref">
+        </Vidrio>
+        <Vidrio fuerte className="panel panel-ref rounded-pane">
           <PanelReferente
             key={refDelEje?.id ?? "vacio"}
             eje={eje}
@@ -106,8 +106,8 @@ export default async function PaginaEje({ params, searchParams }: PageProps<"/[e
             personaSel={perId}
             referentes={referentes}
           />
-        </div>
-        <div className="panel panel-ficha">
+        </Vidrio>
+        <Vidrio fuerte className="panel panel-ficha rounded-pane">
           <FichaPersona
             key={per?.persona.id ?? "vacio"}
             eje={eje}
@@ -115,7 +115,7 @@ export default async function PaginaEje({ params, searchParams }: PageProps<"/[e
             referenteActual={refDelEje?.id ?? null}
             referentes={referentes}
           />
-        </div>
+        </Vidrio>
       </section>
     </main>
   );

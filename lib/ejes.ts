@@ -34,25 +34,11 @@ export const CAMPOS_TIPO: Record<
   { campo: CampoTipo; etiqueta: string }[]
 > = {
   lider: [],
-  empresario: [
-    { campo: "empresa", etiqueta: "Empresa" },
-    { campo: "sector", etiqueta: "Sector" },
-    { campo: "cargo", etiqueta: "Cargo" },
-  ],
-  aliado: [
-    { campo: "partido_movimiento", etiqueta: "Partido o movimiento" },
-    { campo: "cargo_politico", etiqueta: "Cargo político" },
-    { campo: "zona_influencia", etiqueta: "Zona de influencia" },
-  ],
+  empresario: [{ campo: "empresa", etiqueta: "Empresa" }],
+  aliado: [{ campo: "zona_influencia", etiqueta: "Zona de influencia" }],
 };
 
-export type CampoTipo =
-  | "empresa"
-  | "sector"
-  | "cargo"
-  | "partido_movimiento"
-  | "cargo_politico"
-  | "zona_influencia";
+export type CampoTipo = "empresa" | "zona_influencia";
 
 export const VERIFICACIONES = [
   "Valledupar",

@@ -1,9 +1,14 @@
 import { cache } from "react";
 import { crearClienteServidor } from "@/lib/supabase/server";
+import { CATALOGOS, type Catalogo, type Catalogos } from "./catalogos";
 import type { TipoReferente } from "./ejes";
 import type {
   CifrasEje,
   EventoHistorial,
+  PanelBarrio,
+  PanelCalidad,
+  PanelReferente,
+  PanelTotal,
   Persona,
   PersonaDeReferente,
   ReferenteFicha,
@@ -21,7 +26,7 @@ function revisar<T>(r: { data: T | null; error: { message: string } | null }) {
 }
 
 const COLUMNAS_RESUMEN =
-  "id,tipo,nombre,barrio,estado,meta_personas,empresa,sector,partido_movimiento,cargo_politico,total_personas";
+  "id,tipo,nombre,barrio,empresa,zona_influencia,total_personas";
 
 // Se usa en la barra superior y en la página: cache() evita consultar dos veces.
 export const todosLosReferentes = cache(
@@ -51,7 +56,7 @@ export async function referente(id: string): Promise<ReferenteFicha | null> {
     await supabase
       .from("referentes")
       .select(
-        "id,tipo,nombre,cedula,barrio,municipio,estado,meta_personas,notas,empresa,sector,cargo,partido_movimiento,cargo_politico,zona_influencia",
+        "id,tipo,nombre,cedula,barrio,municipio,empresa,zona_influencia",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -127,4 +132,53 @@ export async function persona(id: string): Promise<{
     .slice(0, 15);
 
   return { persona: p, vinculos, historial };
+}
+
+// ---------- Catálogos (barrios, municipios, puestos) ----------
+// Listas cortas: se cargan completas para los formularios.
+export const catalogos = cache(async (): Promise<Catalogos> => {
+  const supabase = await crearClienteServidor();
+  const cats = Object.keys(CATALOGOS) as Catalogo[];
+  const listas = await Promise.all(
+    cats.map(async (c) =>
+      revisar<{ nombre: string }[]>(
+        await supabase.from(CATALOGOS[c].tabla).select("nombre").order("nombre").limit(5000),
+      ).map((f) => f.nombre),
+    ),
+  );
+  return Object.fromEntries(cats.map((c, i) => [c, listas[i]])) as Catalogos;
+});
+
+// ---------- Panel de avance ----------
+// Vistas panel_* (security_invoker): RLS sigue protegiendo los datos.
+
+export async function panelTotales(): Promise<PanelTotal[]> {
+  const supabase = await crearClienteServidor();
+  return revisar(
+    await supabase.from("panel_totales").select("tipo,referentes,personas"),
+  );
+}
+
+export async function panelReferentes(): Promise<PanelReferente[]> {
+  const supabase = await crearClienteServidor();
+  return revisar(
+    await supabase
+      .from("panel_referentes")
+      .select("id,nombre,tipo,total_personas"),
+  );
+}
+
+export async function panelBarrios(): Promise<PanelBarrio[]> {
+  const supabase = await crearClienteServidor();
+  return revisar(await supabase.from("panel_barrios").select("barrio,sin_barrio,personas"));
+}
+
+export async function panelCalidad(): Promise<PanelCalidad> {
+  const supabase = await crearClienteServidor();
+  return revisar(
+    await supabase
+      .from("panel_calidad")
+      .select("sin_cedula,sin_barrio,sin_puesto,sin_verificar,sin_vinculo,varios_referentes")
+      .single(),
+  );
 }
