@@ -3,6 +3,7 @@ import {
   buscarEnLista,
   claveNombre,
   filtrarLista,
+  formatearNombre,
   leerCatalogo,
   limpiarNombre,
   validarNombreNuevo,
@@ -49,6 +50,25 @@ describe('filtrarLista', () => {
   })
 })
 
+describe('formatearNombre', () => {
+  it('mayúscula inicial en cada palabra', () => {
+    expect(formatearNombre('los milagros')).toBe('Los Milagros')
+    expect(formatearNombre('  villa   CASTRO ')).toBe('Villa Castro')
+    expect(formatearNombre('ñañas')).toBe('Ñañas')
+  })
+  it('conectores en minúscula, salvo al inicio', () => {
+    expect(formatearNombre('primero de mayo')).toBe('Primero de Mayo')
+    expect(formatearNombre('VILLA DE LOS ANGELES')).toBe('Villa de los Angeles')
+    expect(formatearNombre('la nevada')).toBe('La Nevada')
+  })
+  it('respeta siglas cortas en mayúscula y salta números y signos', () => {
+    expect(formatearNombre('IE leonidas acuña')).toBe('IE Leonidas Acuña')
+    expect(formatearNombre('villa castro II')).toBe('Villa Castro II')
+    expect(formatearNombre('7 de agosto (sur)')).toBe('7 de Agosto (Sur)')
+    expect(formatearNombre('col. upar')).toBe('Col. Upar')
+  })
+})
+
 describe('validarNombreNuevo', () => {
   it('acepta nombres normales con tildes, ñ, números y signos comunes', () => {
     for (const n of ['La Nevada', 'Villa Castro II', 'Urb. Los Ángeles', 'Mz 12-B', 'Col. Nacional No 4', "Barrio 7 de Agosto (sur)"]) {
@@ -78,7 +98,7 @@ describe('leerCatalogo', () => {
     expect(leerCatalogo(fd({ municipio: 'La Paz' }), 'municipio', []).error).toBe('Elige un municipio de la lista o agrégalo como nuevo.')
   })
   it('nuevo válido → se agrega', () => {
-    expect(leerCatalogo(fd({ barrio: 'Las  Flores', barrio_nuevo: '1' }), 'barrio', BARRIOS)).toEqual({
+    expect(leerCatalogo(fd({ barrio: 'las  flores', barrio_nuevo: '1' }), 'barrio', BARRIOS)).toEqual({
       valor: 'Las Flores',
       nuevo: 'Las Flores',
       error: null,

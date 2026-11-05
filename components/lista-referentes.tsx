@@ -31,15 +31,15 @@ export default function ListaReferentes({
         <Texto
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
-          placeholder="Filtrar por nombre"
-          aria-label={`Filtrar ${conf.varios} por nombre`}
+          placeholder="Filtrar por nombre o cédula"
+          aria-label={`Filtrar ${conf.varios} por nombre o cédula`}
           className="mt-3 h-[38px]"
         />
       </div>
 
       <div className="panel-cuerpo">
         {lista.length === 0 ? (
-          <Vacio>No hay {conf.varios} con ese nombre.</Vacio>
+          <Vacio>No hay {conf.varios} con ese nombre o cédula.</Vacio>
         ) : (
           <ul className="pb-2">
             {lista.map((r) => {

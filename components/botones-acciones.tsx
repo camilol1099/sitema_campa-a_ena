@@ -274,7 +274,7 @@ export function BotonVincularPersona({
                     autoFocus
                     value={texto}
                     onChange={(e) => setTexto(e.target.value)}
-                    placeholder="Nombre o últimos dígitos de la cédula"
+                    placeholder="Nombre o cédula"
                     aria-label="Buscar persona"
                     className="min-w-0 flex-1 bg-transparent text-ink outline-none placeholder:text-faint"
                   />

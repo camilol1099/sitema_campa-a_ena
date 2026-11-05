@@ -8,6 +8,8 @@ export type ReferenteResumen = {
   empresa: string | null;
   zona_influencia: string | null;
   total_personas: number;
+  // Solo para filtrar la lista; no se muestra.
+  cedula: string | null;
 };
 
 // Ficha del referente: sin celular ni dirección (no se muestran).

@@ -21,6 +21,29 @@ export const SUFIJO_NUEVO = "_nuevo";
 // Quita espacios al inicio, al final y dobles.
 export const limpiarNombre = (t: string) => t.trim().replace(/\s+/g, " ");
 
+// Palabras que van en minúscula dentro del nombre ("Primero de Mayo").
+const CONECTORES = new Set(["de", "del", "la", "las", "el", "los", "y", "e", "en", "a", "al"]);
+
+// Nombre nuevo con mayúscula inicial en cada palabra: "los milagros" →
+// "Los Milagros", "VILLA DE LEYVA" → "Villa de Leyva". Las siglas cortas
+// escritas en mayúscula se respetan ("IE", "II") salvo que todo el nombre
+// venga en mayúscula.
+export function formatearNombre(texto: string): string {
+  const limpio = limpiarNombre(texto);
+  const todoMayuscula = limpio === limpio.toUpperCase();
+  return limpio
+    .split(" ")
+    .map((palabra, i) => {
+      const esSigla = !todoMayuscula && palabra.length <= 3 && /\p{L}/u.test(palabra) && palabra === palabra.toUpperCase();
+      if (esSigla) return palabra;
+      const min = palabra.toLocaleLowerCase("es");
+      if (i > 0 && CONECTORES.has(min)) return min;
+      // primera letra en mayúscula (se salta números y signos: "(sur)" → "(Sur)")
+      return min.replace(/\p{L}/u, (l) => l.toLocaleUpperCase("es"));
+    })
+    .join(" ");
+}
+
 // Clave para comparar: sin tildes, sin mayúsculas, sin puntos ni espacios de más.
 // "San Martin", "SAN MARTÍN" y "san  martín" son el mismo barrio.
 export const claveNombre = (t: string) =>
@@ -58,7 +81,8 @@ export function validarNombreNuevo(nombre: string, cat: Catalogo): string | null
 // Lee un campo de catálogo del formulario.
 // - Vacío → null.
 // - Igual a uno de la lista (sin importar tildes o mayúsculas) → el de la lista.
-// - Distinto y marcado como nuevo → se valida y se agrega (`nuevo`).
+// - Distinto y marcado como nuevo → se valida y se agrega con mayúscula
+//   inicial (`nuevo`).
 // - Distinto y sin marcar → error: debe elegirse de la lista.
 export function leerCatalogo(
   formData: FormData,
@@ -79,5 +103,7 @@ export function leerCatalogo(
     };
   }
   const error = validarNombreNuevo(texto, cat);
-  return error ? { valor: null, nuevo: null, error } : { valor: texto, nuevo: texto, error: null };
+  if (error) return { valor: null, nuevo: null, error };
+  const nombre = formatearNombre(texto);
+  return { valor: nombre, nuevo: nombre, error: null };
 }

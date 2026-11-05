@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { alertasPersona } from '@/lib/alertas'
 import { coordinadoresDistintos, datosFichaReferente } from '@/lib/fichas'
-import { filtrarReferentes, sinTildes } from '@/lib/filtros'
+import { digitosCedula, filtrarReferentes, sinTildes } from '@/lib/filtros'
 import type { ReferenteFicha } from '@/lib/tipos'
 
 describe('sinTildes', () => {
@@ -11,14 +11,37 @@ describe('sinTildes', () => {
   })
 })
 
+describe('digitosCedula', () => {
+  it('solo dígitos si parece una cédula; null si tiene letras', () => {
+    expect(digitosCedula("77'023.344")).toBe('77023344')
+    expect(digitosCedula(' 1 065 100 ')).toBe('1065100')
+    expect(digitosCedula('Ana 12')).toBeNull()
+    expect(digitosCedula('')).toBeNull()
+  })
+})
+
 describe('filtrarReferentes', () => {
   const refs = [
-    { nombre: 'Rosa Elena Daza', total_personas: 10 },
-    { nombre: 'Óscar Iván Rodríguez', total_personas: 0 },
-    { nombre: 'Jorge Luis Oñate', total_personas: 30 },
-    { nombre: 'Ana Ariza', total_personas: 10 },
+    { nombre: 'Rosa Elena Daza', total_personas: 10, cedula: '1065100001' },
+    { nombre: 'Óscar Iván Rodríguez', total_personas: 0, cedula: null },
+    { nombre: 'Jorge Luis Oñate', total_personas: 30, cedula: '1065100002' },
+    { nombre: 'Ana Ariza', total_personas: 10, cedula: '77023344' },
   ]
   const nombres = (r: { nombre: string }[]) => r.map((x) => x.nombre)
+
+  it('por cédula: completa, con puntos o espacios, o cualquier parte', () => {
+    expect(nombres(filtrarReferentes(refs, '1065100002'))).toEqual(['Jorge Luis Oñate'])
+    expect(nombres(filtrarReferentes(refs, "1.065.100.001"))).toEqual(['Rosa Elena Daza'])
+    expect(nombres(filtrarReferentes(refs, "77'023.344"))).toEqual(['Ana Ariza'])
+    expect(nombres(filtrarReferentes(refs, ' 023 344 '))).toEqual(['Ana Ariza'])
+    expect(nombres(filtrarReferentes(refs, '106510'))).toEqual(['Jorge Luis Oñate', 'Rosa Elena Daza'])
+  })
+  it('por cédula: pocos dígitos también filtran', () => {
+    expect(nombres(filtrarReferentes(refs, '77'))).toEqual(['Ana Ariza'])
+  })
+  it('sin cédula no aparece al buscar por números', () => {
+    expect(nombres(filtrarReferentes(refs, '999'))).toEqual([])
+  })
 
   it('ordenados por personas y luego por nombre', () => {
     expect(nombres(filtrarReferentes(refs, ''))).toEqual([

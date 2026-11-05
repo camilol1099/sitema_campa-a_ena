@@ -7,6 +7,7 @@ import {
   SUFIJO_NUEVO,
   buscarEnLista,
   filtrarLista,
+  formatearNombre,
   limpiarNombre,
   validarNombreNuevo,
   type Catalogo,
@@ -65,7 +66,7 @@ export function ListaCatalogo({
     setAbierto(false);
   }
   function agregar() {
-    setTexto(limpio);
+    setTexto(formatearNombre(limpio));
     setNuevo(true);
     setAbierto(false);
   }
@@ -182,7 +183,7 @@ export function ListaCatalogo({
                 activo === opciones.length ? "bg-neu" : ""
               } ${opciones.length ? "mt-1 border-t border-linea" : ""}`}
             >
-              + Agregar «{limpio}» como {uno} nuevo
+              + Agregar «{formatearNombre(limpio)}» como {uno} nuevo
             </li>
           )}
         </ul>

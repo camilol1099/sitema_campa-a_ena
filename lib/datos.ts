@@ -26,7 +26,7 @@ function revisar<T>(r: { data: T | null; error: { message: string } | null }) {
 }
 
 const COLUMNAS_RESUMEN =
-  "id,tipo,nombre,barrio,empresa,zona_influencia,total_personas";
+  "id,tipo,nombre,barrio,empresa,zona_influencia,total_personas,cedula";
 
 // Se usa en la barra superior y en la página: cache() evita consultar dos veces.
 export const todosLosReferentes = cache(
