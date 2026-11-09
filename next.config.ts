@@ -37,6 +37,11 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   cacheComponents: true,
   partialPrefetching: true,
+  experimental: {
+    // La vista previa de importación del asistente envía las filas del archivo
+    // (máximo 5.000) a una Server Action.
+    serverActions: { bodySizeLimit: "4mb" },
+  },
   turbopack: {
     rules: {
       "*.css": {

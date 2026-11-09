@@ -8,15 +8,37 @@ export function textoOpcional(valor: FormDataEntryValue | null) {
   return t === "" ? null : t;
 }
 
+export type CedulaLimpia = { cedula: string | null; error: string | null; aviso: string | null };
+
+/**
+ * Única regla de cédula del sistema (formularios, importación y asistente).
+ * - Se quitan puntos, espacios, comas y apóstrofos ("1.065.821.234" → "1065821234").
+ * - Luego solo dígitos, entre 6 y 10. Si no: error (no se guarda).
+ * - Avisos (se guarda, pero se marca): 9 dígitos que empiezan por "10"
+ *   (posible dígito faltante) y 10 dígitos que empiezan por "19".
+ */
+export function limpiarCedula(texto: string | null | undefined): CedulaLimpia {
+  const t = String(texto ?? "").trim();
+  if (!t) return { cedula: null, error: null, aviso: null };
+  const c = t.replace(/[.\s,'’]/g, "");
+  if (!SOLO_NUMEROS.test(c)) {
+    return { cedula: null, error: "La cédula solo puede tener números.", aviso: null };
+  }
+  if (c.length < 6 || c.length > 10) {
+    return { cedula: null, error: "La cédula debe tener entre 6 y 10 dígitos.", aviso: null };
+  }
+  const aviso =
+    c.length === 9 && c.startsWith("10")
+      ? "Cédula de 9 dígitos que empieza por 10: puede faltarle un dígito."
+      : c.length === 10 && c.startsWith("19")
+        ? "Cédula de 10 dígitos que empieza por 19: revísela."
+        : null;
+  return { cedula: c, error: null, aviso };
+}
+
+/** Solo el error de limpiarCedula (null si está bien o vacía). */
 export function validarCedula(cedula: string | null): string | null {
-  if (cedula === null) return null;
-  if (!SOLO_NUMEROS.test(cedula)) {
-    return "La cédula solo puede tener números, sin puntos ni espacios.";
-  }
-  if (cedula.length < 5 || cedula.length > 12) {
-    return "La cédula debe tener entre 5 y 12 dígitos.";
-  }
-  return null;
+  return limpiarCedula(cedula).error;
 }
 
 export function enteroOpcional(

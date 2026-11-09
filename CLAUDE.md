@@ -60,6 +60,7 @@ Todas las tablas con `id uuid`, `created_at`, `updated_at` (trigger), `created_b
 | `cedula` | única si existe |
 | `celular`, `direccion` | se guardan, **no se muestran** en la ficha |
 | `barrio`, `municipio` | de las listas `barrios` y `municipios` |
+| `puesto_votacion`, `mesa`, `municipio_verificacion`, `coordinador` | del propio referente (líderes que en el Excel estaban vinculados a sí mismos); sí se muestran |
 | Solo empresario: `empresa` | |
 | Solo aliado: `zona_influencia` | |
 
@@ -113,19 +114,67 @@ La interfaz debe avisar cuando una persona ya está con otro referente.
 - Búsquedas sin armar filtros `.or()` con texto crudo del usuario.
 - Probar con la `anon key` sin sesión: toda consulta debe devolver vacío.
 
-## Datos de prueba (mientras llega el Excel nuevo)
+## Datos reales (desde el 2026-11-05)
 
-Todavía **no hay información real**: la clienta enviará un Excel nuevo. Mientras tanto:
-- Desarrolla con **datos ficticios** generados por `supabase/seed.sql` (o un script en `scripts/seed`):
-  unos 10 líderes, 4 empresarios, 4 aliados y ~300 personas con nombres inventados, algunas sin cédula,
-  sin barrio o vinculadas a dos referentes, para probar todos los casos.
-- No inventes columnas nuevas pensando en el Excel futuro: cuando llegue, se revisan sus columnas
-  y se ajusta el script de importación.
-- El script de importación debe aceptar un **mapeo de columnas configurable** (nombre de columna del Excel → campo).
+Ya no hay datos ficticios (se quitó `supabase/seed.sql`). Se usan los datos reales del Excel; todas las personas
+autorizaron el tratamiento de datos. Por ahora solo líderes y sus personas (sin empresarios ni aliados).
+
+- Importación: `python scripts/importar_excel.py "data/BD Jesús Perpiñán.xlsx"` revisa y escribe
+  `data/informe_importacion.md`; con `--subir` sube los datos (solo si la base está vacía).
+  `scripts/vaciar_datos_prueba.sql` vacía la base antes de importar.
+- El mapeo de columnas del Excel está en `COLUMNAS` dentro del script.
+- Líder vinculado a sí mismo (o un par de `MISMO_LIDER`): solo líder, con los datos de su fila; no es persona.
+- Cédula repetida: la primera fila conserva la cédula; las demás quedan sin cédula y con observación.
+- Líderes escritos distinto solo por mayúsculas/tildes se unen en uno.
+- Nadie puede ser persona y líder a la vez: la fila con la misma cédula o el mismo nombre de un líder no se crea
+  como persona; sus datos completan los que le falten al líder.
+- Barrios que Excel convirtió en fecha o número se corrigen con `BARRIO_CORREGIDO` (aprobado por el desarrollador).
+- "No se encuentra en el censo" del Excel se guarda como `No está en el censo`.
+
+## Sin líder y panel de Revisión (desde el 2026-11-06)
+
+- Nadie queda sin líder: quien no tiene uno queda con el líder especial **"Sin líder asignado"** (`lib/sin-lider.ts`),
+  con toda su información. Pasa al crear sin referente, al importar y con los que ya existían. Al vincularla a un
+  líder real, el vínculo con "Sin líder asignado" se desactiva solo.
+- **Revisión** (`/revision`, pestaña con contador): personas que el sistema no sabe resolver: sin líder, cédula fuera
+  de 6–10 dígitos y cédula repetida en el Excel. Se corrigen ahí mismo (`arreglarPersona`); un repetido que es la
+  misma persona se puede borrar (`eliminarPersona`, queda en el historial).
+
+## Despliegue, latido y pruebas de aceptación (desde el 2026-11-09)
+
+- **Vercel** (`vercel.json`): región `gru1` (São Paulo, junto a la base de Supabase en `sa-east-1`).
+  Variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `ANTHROPIC_API_KEY`, `CRON_SECRET`.
+- **Latido** (`/api/latido`, tarea diaria en `vercel.json` → `crons`): llama a `public.latido()` (solo devuelve la
+  hora) para que Supabase no pause el proyecto por 7 días sin uso. Es la única ruta sin sesión; si existe
+  `CRON_SECRET`, exige `Authorization: Bearer <CRON_SECRET>` (Vercel lo envía solo).
+- Sin sesión, las rutas `/api/*` responden 401 con un mensaje (no redirigen al login).
+- **Pruebas de aceptación** (`scripts/aceptacion.mjs`, `npm run test:aceptacion`): 42 pruebas en un navegador real
+  contra la app en `localhost:3107` (o la URL que se le pase). Crean y borran registros "Prueba Aceptacion …"
+  (cédulas 91003…) en la base real y dejan rastro en el historial. Correrlas antes de cada despliegue.
+
+## Asistente de IA (desde el 2026-11-06)
+
+- Botón "Asistente" en la barra superior → panel de vidrio (`components/asistente.tsx`). La conversación no se guarda.
+- Servidor: `app/api/asistente/route.ts` (sesión + `soy_admin()`, RLS; nunca service_role). Modelo en
+  `lib/asistente/config.ts` (`MODELO`). Clave `ANTHROPIC_API_KEY` solo en el servidor.
+- Herramientas en `lib/asistente/herramientas.ts`: solo supabase-js parametrizado, máximo 50 resultados.
+  Las `proponer_*` no guardan: muestran una tarjeta y al confirmar se usan las acciones de los formularios.
+- El asistente sí muestra cédula completa, celular y dirección de las **personas** (`buscar_personas`, `ver_persona`,
+  y `con_contacto` en `ver_referente` / `personas_con_problemas`): la administradora está autorizada (pedido del
+  2026-11-06). De los referentes no los muestra (regla de la ficha del referente).
+- Archivos .xlsx/.csv: se leen en el navegador (SheetJS desde cdn.sheetjs.com, nunca `xlsx` 0.18.5 de npm).
+  Al modelo solo van hojas, encabezados, 5 filas de ejemplo y el número de filas.
+- Importación (`lib/importacion.ts`, `lib/campana.ts` + `app/(privado)/importacion.ts`): el formato de Excel de la
+  campaña lo entiende el código (reglas en `docs/FORMATO_EXCEL.md`); el modelo solo da el filtro
+  (`filtrar_importacion`) o, si el formato no se reconoce, el mapeo (`proponer_mapeo`). Una vista previa por
+  secciones y un solo lote (`importar_lote`): crea líderes y personas y completa líderes existentes (solo campos
+  vacíos). "Deshacer lote" (`deshacer_lote`) borra lo creado y restaura lo completado si nadie lo editó después.
+- Cédula: una sola regla (`limpiarCedula` en `lib/validacion.ts`): sin puntos/espacios/comas, 6 a 10 dígitos;
+  una cédula no puede estar en personas y referentes a la vez (también lo impide un trigger en la base).
 
 ## Datos de origen (Excel del año pasado, referencia)
 
-`data/BD_Jesús_Perpiñán.xlsx`, hoja **Hoja1**: 1.981 filas. Columnas:
+`data/BD Jesús Perpiñán.xlsx`, hoja **BD** (encabezados en la fila 8): 1.980 filas. Columnas:
 `#, NOMBRE, CÉDULA, CELULAR, DIRECCIÓN, BARRIO, Puesto de Votación, Mesa, Municipio, Lider, Coordinador`.
 
 - 129 líderes (columna `Lider`) → se importan como `referentes` tipo `lider`; cada fila crea su `vinculo`.

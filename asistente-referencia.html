@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Referencia · Asistente</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#e6eee5;--ink:#10200e;--muted:#4c5a49;--faint:#5f6c5c;--brand:#214820;--brand-2:#48a733;
+  --glass-line:rgba(255,255,255,.8);
+  --neu-bg:#edf2ec;
+  --neu-out-sm:3px 3px 7px rgba(33,72,32,.12),-3px -3px 7px rgba(255,255,255,.9);
+  --neu-in:inset 3px 3px 7px rgba(33,72,32,.13),inset -3px -3px 7px rgba(255,255,255,.95);
+  --grad:linear-gradient(135deg,#4fb437 0%,#2f7a26 45%,#214820 100%);
+  --warn-bg:#fde4d9;--warn-ink:#9a3412;--note-bg:#fff1bf;--note-ink:#6f4a00;--ok-bg:#e1f2da;--ok-ink:#1f5a17;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:Poppins,system-ui,sans-serif;font-size:14px;line-height:21px;color:var(--ink);background:var(--bg);overflow:hidden}
+button,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--brand-2);outline-offset:2px}
+
+/* ---- app de fondo (solo contexto) ---- */
+.fondo{position:fixed;inset:0;background:
+  radial-gradient(60vw 60vw at -10% -20%,rgba(72,167,51,.42),transparent 60%),
+  radial-gradient(55vw 55vw at 110% 120%,rgba(33,72,32,.38),transparent 60%),
+  radial-gradient(40vw 40vw at 40% 70%,rgba(168,214,150,.45),transparent 65%),var(--bg)}
+.app{position:fixed;inset:0;padding:12px 18px}
+.top{height:66px;border-radius:22px;background:rgba(255,255,255,.55);border:1px solid var(--glass-line);display:flex;align-items:center;gap:18px;padding:0 14px;box-shadow:0 18px 40px -18px rgba(16,48,14,.3)}
+.top .logo{width:40px;height:40px;border-radius:13px;background:var(--grad)}
+.top .tabs{display:flex;gap:4px;padding:5px;border-radius:16px;background:var(--neu-bg);box-shadow:var(--neu-in)}
+.top .tabs span{padding:0 14px;height:36px;display:flex;align-items:center;border-radius:12px;color:var(--muted)}
+.top .tabs span.on{background:#fff;color:var(--brand);font-weight:600;box-shadow:var(--neu-out-sm)}
+.top .sp{flex:1}
+.btn-asis{height:42px;padding:0 16px 0 12px;border-radius:14px;border:0;display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;background:#fff;color:var(--brand);box-shadow:var(--neu-out-sm)}
+.btn-asis.on{background:var(--grad);color:#fff}
+.btn-asis kbd{font:inherit;font-size:11px;padding:0 6px;border-radius:6px;background:rgba(33,72,32,.08);color:var(--muted);font-weight:500}
+.btn-asis.on kbd{background:rgba(255,255,255,.2);color:#fff}
+.mock{display:grid;grid-template-columns:330px 1fr;gap:18px;margin-top:22px;height:calc(100% - 110px)}
+.mock div{border-radius:24px;background:rgba(255,255,255,.6);border:1px solid var(--glass-line)}
+
+/* ---- capa del asistente ---- */
+.velo{position:fixed;inset:0;background:rgba(16,32,14,.16);z-index:9}
+.asis{position:fixed;z-index:10;top:12px;right:12px;bottom:12px;width:448px;display:flex;flex-direction:column;
+  border-radius:26px;background:rgba(250,252,249,.92);backdrop-filter:blur(26px) saturate(160%);-webkit-backdrop-filter:blur(26px) saturate(160%);
+  border:1px solid var(--glass-line);box-shadow:0 30px 70px -20px rgba(16,48,14,.45),inset 0 1px 0 #fff;overflow:hidden;transition:width .2s}
+.asis.ancho{width:min(780px,calc(100vw - 24px))}
+
+/* cabecera */
+.a-head{flex:none;display:flex;align-items:center;gap:12px;padding:16px 14px 14px 18px;border-bottom:1px solid rgba(33,72,32,.08)}
+.a-ico{width:42px;height:42px;border-radius:14px;background:var(--grad);display:flex;align-items:center;justify-content:center;color:#fff;flex:none;box-shadow:0 8px 16px -8px rgba(33,72,32,.7),inset 0 1px 0 rgba(255,255,255,.35)}
+.a-tit{flex:1;min-width:0}
+.a-tit b{display:block;font-size:16px;line-height:22px}
+.a-tit span{display:flex;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}
+.a-tit span i{width:7px;height:7px;border-radius:50%;background:var(--brand-2);box-shadow:0 0 0 3px rgba(72,167,51,.18)}
+.ibtn{width:36px;height:36px;border-radius:12px;border:0;background:transparent;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none}
+.ibtn:hover{background:var(--neu-bg);color:var(--ink);box-shadow:var(--neu-out-sm)}
+
+/* cuerpo */
+.a-body{flex:1;min-height:0;overflow-y:auto;padding:20px 18px 8px;display:flex;flex-direction:column;gap:16px;scrollbar-width:thin;scrollbar-color:rgba(33,72,32,.2) transparent}
+.dia{align-self:center;font-size:12px;color:var(--faint);padding:2px 10px;border-radius:999px;background:rgba(33,72,32,.06)}
+
+/* vacío */
+.vacio{margin:auto 0;text-align:left;padding:8px 4px}
+.vacio h2{margin:0 0 4px;font-size:22px;line-height:30px;letter-spacing:-.01em}
+.vacio p{margin:0 0 18px;color:var(--muted)}
+.sug{display:grid;gap:8px}
+.sug button{display:flex;align-items:center;gap:12px;text-align:left;border:0;cursor:pointer;padding:12px 14px;border-radius:16px;background:#fff;box-shadow:var(--neu-out-sm);transition:transform .15s}
+.sug button:hover{transform:translateY(-1px);color:var(--brand)}
+.sug .si{width:32px;height:32px;border-radius:10px;background:var(--neu-bg);box-shadow:var(--neu-in);display:flex;align-items:center;justify-content:center;color:var(--brand);flex:none}
+.sug small{display:block;color:var(--muted);font-size:12.5px;line-height:17px}
+.priv{margin-top:18px;display:flex;gap:8px;font-size:12.5px;line-height:18px;color:var(--muted)}
+
+/* mensajes */
+.m-user{align-self:flex-end;max-width:84%;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.m-user .burb{background:var(--grad);color:#fff;padding:10px 14px;border-radius:18px 18px 6px 18px;box-shadow:0 8px 18px -10px rgba(33,72,32,.7)}
+.m-bot{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start;max-width:100%}
+.m-bot .av{width:28px;height:28px;border-radius:9px;background:var(--grad);display:flex;align-items:center;justify-content:center;color:#fff;margin-top:2px}
+.m-bot .txt p{margin:0 0 8px}
+.m-bot .txt p:last-child{margin:0}
+.m-bot .txt ul{margin:4px 0 8px;padding-left:18px}
+.m-bot .txt b{font-weight:600}
+.adj{display:inline-flex;align-items:center;gap:10px;padding:8px 12px 8px 8px;border-radius:14px;background:#fff;box-shadow:var(--neu-out-sm);font-size:13px}
+.adj .fi{width:32px;height:32px;border-radius:10px;background:#e1f2da;color:#1f6b22;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.adj small{display:block;color:var(--muted);font-size:12px;line-height:16px}
+
+/* tarjetas */
+.card{margin-top:10px;border-radius:18px;background:#fff;box-shadow:var(--neu-out-sm);overflow:hidden}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px 10px}
+.card-h b{font-size:14px}
+.card-h span{font-size:12px;color:var(--muted)}
+.conteos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:0 14px}
+.conteos div{border-radius:12px;padding:8px 10px}
+.conteos b{display:block;font-size:20px;line-height:26px;font-variant-numeric:tabular-nums}
+.conteos span{font-size:12px}
+.c-ok{background:var(--ok-bg);color:var(--ok-ink)}.c-om{background:var(--neu-bg);color:var(--muted)}.c-pr{background:var(--warn-bg);color:var(--warn-ink)}
+.det{margin:10px 14px 0}
+.det summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--brand);list-style:none;display:flex;align-items:center;gap:6px}
+.det summary::-webkit-details-marker{display:none}
+.tabla{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+.tabla th{text-align:left;font-weight:600;color:var(--muted);padding:6px 8px;border-bottom:1px solid rgba(33,72,32,.1)}
+.tabla td{padding:7px 8px;border-bottom:1px solid rgba(33,72,32,.06);vertical-align:top}
+.tabla .pill{display:inline-block;font-size:11.5px;line-height:18px;padding:0 8px;border-radius:999px;background:var(--warn-bg);color:var(--warn-ink)}
+.card-a{display:flex;gap:8px;justify-content:flex-end;padding:12px 14px 14px}
+.btn{height:38px;padding:0 16px;border-radius:12px;border:0;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn.pri{background:var(--grad);color:#fff;box-shadow:0 10px 20px -8px rgba(33,72,32,.6),inset 0 1px 0 rgba(255,255,255,.35)}
+.btn.sec{background:var(--neu-bg);box-shadow:var(--neu-out-sm)}
+.prop dl{display:grid;grid-template-columns:96px minmax(0,1fr);gap:4px 10px;margin:0;padding:0 14px;font-size:13px}
+.prop dt{color:var(--muted)}.prop dd{margin:0;font-weight:500}
+.aviso{margin:10px 14px 0;padding:8px 10px;border-radius:10px;background:var(--note-bg);color:var(--note-ink);font-size:12.5px;line-height:18px}
+.hecho{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ok-ink);background:var(--ok-bg);padding:8px 12px;border-radius:12px;margin-top:8px}
+.hecho button{margin-left:auto;border:0;background:none;color:var(--ok-ink);font-weight:600;cursor:pointer;text-decoration:underline}
+.escribiendo{display:flex;gap:4px;padding:10px 0}
+.escribiendo i{width:7px;height:7px;border-radius:50%;background:var(--brand-2);opacity:.4;animation:p 1.2s infinite}
+.escribiendo i:nth-child(2){animation-delay:.15s}.escribiendo i:nth-child(3){animation-delay:.3s}
+@keyframes p{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+
+/* compositor */
+.a-foot{flex:none;padding:10px 14px 14px;border-top:1px solid rgba(33,72,32,.08);background:linear-gradient(rgba(250,252,249,0),rgba(250,252,249,.9) 30%)}
+.caja{border-radius:20px;background:#fff;box-shadow:var(--neu-out-sm),inset 0 0 0 1px rgba(33,72,32,.06);padding:8px;transition:box-shadow .15s}
+.caja:focus-within{box-shadow:var(--neu-out-sm),0 0 0 2px rgba(72,167,51,.6)}
+.chip-adj{display:inline-flex;align-items:center;gap:8px;margin:2px 2px 6px;padding:6px 6px 6px 10px;border-radius:12px;background:var(--neu-bg);font-size:12.5px}
+.chip-adj button{width:22px;height:22px;border-radius:7px;border:0;background:transparent;cursor:pointer;color:var(--muted)}
+.caja textarea{display:block;width:100%;border:0;outline:0;resize:none;background:transparent;padding:6px 8px;min-height:44px;max-height:160px;line-height:21px}
+.caja textarea::placeholder{color:#7a8677}
+.fila{display:flex;align-items:center;gap:8px;padding:2px 2px 0}
+.fila .hint{flex:1;font-size:11.5px;color:var(--faint)}
+.enviar{width:38px;height:38px;border-radius:12px;border:0;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 16px -8px rgba(33,72,32,.7)}
+.enviar:disabled{background:#d7ddd5;box-shadow:none;cursor:not-allowed;color:#fff}
+
+/* demo: selector de estado */
+.demo{position:fixed;left:18px;bottom:18px;z-index:20;display:flex;gap:6px;padding:6px;border-radius:14px;background:rgba(16,32,14,.85);color:#fff;font-size:12.5px}
+.demo button{border:0;background:transparent;color:#fff;padding:6px 10px;border-radius:9px;cursor:pointer}
+.demo button.on{background:rgba(255,255,255,.18)}
+
+@media (max-width:860px){
+  .asis,.asis.ancho{top:0;right:0;bottom:0;left:0;width:auto;border-radius:0}
+  .velo{display:none}
+  .a-head .exp{display:none}
+  .demo{left:50%;transform:translateX(-50%);bottom:110px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="fondo"></div>
+<div class="app" aria-hidden="true">
+  <div class="top"><span class="logo"></span><b>Jesús Perpiñán</b><div class="tabs"><span>Panel</span><span class="on">Líderes</span><span>Empresarios</span><span>Aliados</span></div><span class="sp"></span>
+    <button class="btn-asis on" tabindex="-1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>Asistente <kbd>Ctrl K</kbd></button>
+  </div>
+  <div class="mock"><div></div><div></div></div>
+</div>
+<div class="velo"></div>
+
+<aside class="asis" id="asis" role="dialog" aria-label="Asistente">
+  <header class="a-head">
+    <span class="a-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg></span>
+    <div class="a-tit"><b>Asistente</b><span><i></i>No guarda nada sin su confirmación</span></div>
+    <button class="ibtn" title="Nueva conversación" aria-label="Nueva conversación"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+    <button class="ibtn exp" title="Ampliar" aria-label="Ampliar panel" onclick="document.getElementById('asis').classList.toggle('ancho')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button>
+    <button class="ibtn" title="Cerrar (Esc)" aria-label="Cerrar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </header>
+
+  <div class="a-body" id="body"></div>
+
+  <footer class="a-foot">
+    <div class="caja">
+      <div id="chip"></div>
+      <textarea id="ta" rows="1" placeholder="Pregunte algo o adjunte un Excel…" aria-label="Mensaje"></textarea>
+      <div class="fila">
+        <button class="ibtn" title="Adjuntar Excel o CSV" aria-label="Adjuntar Excel o CSV"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m21 11-8.6 8.6a5 5 0 0 1-7-7L14 4a3.3 3.3 0 0 1 4.7 4.7L10 17.3a1.7 1.7 0 0 1-2.3-2.4L15.6 7"/></svg></button>
+        <span class="hint">Enter para enviar · Shift+Enter nueva línea</span>
+        <button class="enviar" id="send" aria-label="Enviar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+      </div>
+    </div>
+  </footer>
+</aside>
+
+<div class="demo"><span style="padding:6px 6px;opacity:.7">Demo:</span><button id="d1" onclick="estado(1)">Vacío</button><button id="d2" class="on" onclick="estado(2)">Conversación</button><button id="d3" onclick="document.getElementById('asis').classList.toggle('ancho')">Ancho</button></div>
+
+<script>
+const ic={xls:'XLS'};
+const VACIO=`<div class="vacio">
+  <h2>Hola, Ena</h2><p>Pregunte por líderes y personas, o adjunte un Excel para cargar datos.</p>
+  <div class="sug">
+   <button><span class="si">#</span><span>¿Cuántas personas tiene cada líder?<small>Resumen con avance frente a la meta</small></span></button>
+   <button><span class="si">!</span><span>Personas sin puesto de votación<small>Agrupadas por líder</small></span></button>
+   <button><span class="si">?</span><span>Buscar por cédula o nombre<small>Ej.: ¿quién tiene la cédula 1065…?</small></span></button>
+   <button><span class="si">+</span><span>Cargar un Excel<small>Muestra una vista previa antes de guardar</small></span></button>
+  </div>
+  <div class="priv"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="flex:none;margin-top:1px"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6l-8-3Z"/></svg>El archivo se lee en su equipo y no se guarda. La conversación se borra al recargar.</div>
+ </div>`;
+const AV='<span class="av"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8z"/></svg></span>';
+const CONV=`<span class="dia">Hoy, 9:12</span>
+ <div class="m-user"><span class="burb">¿Cuántas personas tiene Bautista Perpiñan y cuántas no tienen puesto?</span></div>
+ <div class="m-bot">${AV}<div class="txt"><p><b>Bautista Perpiñan</b> tiene <b>105 personas</b>.</p><ul><li>94 votan en Valledupar con puesto y mesa.</li><li><b>11 no tienen puesto</b>: 7 sin verificar y 4 que no votan en el municipio.</li></ul><p>¿Quiere ver la lista de las 11?</p></div></div>
+ <div class="m-user"><span class="adj"><span class="fi">XLS</span><span>empresarios_nov.xlsx<small>1 hoja · 57 filas</small></span></span><span class="burb">Agrega todos los empresarios de este Excel</span></div>
+ <div class="m-bot">${AV}<div class="txt"><p>Usé la columna <b>Tipo = Empresario</b> y vinculé cada uno al líder de la columna <b>Referente</b>. Revise antes de importar:</p>
+  <div class="card"><div class="card-h"><b>Vista previa de la importación</b><span>empresarios_nov.xlsx</span></div>
+   <div class="conteos"><div class="c-ok"><b>48</b><span>nuevos</span></div><div class="c-om"><b>6</b><span>ya existen</span></div><div class="c-pr"><b>3</b><span>con problemas</span></div></div>
+   <details class="det" open><summary>Ver los 3 con problemas ▾</summary>
+    <table class="tabla"><thead><tr><th>Fila</th><th>Nombre</th><th>Motivo</th></tr></thead><tbody>
+     <tr><td>12</td><td>Ramiro Molina</td><td><span class="pill">Cédula de 11 dígitos</span></td></tr>
+     <tr><td>31</td><td>Claudia Barros</td><td><span class="pill">Cédula repetida en el archivo</span></td></tr>
+     <tr><td>44</td><td>Eduardo Mejía</td><td><span class="pill">Líder "R. Gutierez" no existe</span></td></tr>
+    </tbody></table></details>
+   <div class="card-a"><button class="btn sec">Cancelar</button><button class="btn pri">Importar 48 nuevos</button></div></div>
+  <div class="hecho">✓ Se importaron 48 empresarios (lote del 6 nov, 9:15).<button>Deshacer</button></div></div></div>
+ <div class="m-user"><span class="burb">Agrega a Luis Ariza, cc 1065999888, cel 3001234567, con Ena Arredondo</span></div>
+ <div class="m-bot">${AV}<div class="txt"><p>Preparé este registro:</p>
+  <div class="card prop"><div class="card-h"><b>Nueva persona</b><span>Borrador</span></div>
+   <dl><dt>Nombre</dt><dd>Luis Ariza</dd><dt>Cédula</dt><dd>1065999888</dd><dt>Celular</dt><dd>300 123 4567</dd><dt>Líder</dt><dd>Ena Arredondo</dd></dl>
+   <div class="aviso">No tiene puesto ni barrio. Puede completarlos después en su ficha.</div>
+   <div class="card-a"><button class="btn sec">Descartar</button><button class="btn pri">Confirmar</button></div></div></div></div>
+ <div class="m-bot">${AV}<div class="escribiendo"><i></i><i></i><i></i></div></div>`;
+function estado(n){
+  document.getElementById('body').innerHTML=n===1?VACIO:CONV;
+  document.getElementById('chip').innerHTML=n===1?'':'';
+  document.getElementById('send').disabled=n===1;
+  document.getElementById('d1').classList.toggle('on',n===1);document.getElementById('d2').classList.toggle('on',n===2);
+  const b=document.getElementById('body');b.scrollTop=b.scrollHeight;
+}
+const ta=document.getElementById('ta');
+ta.addEventListener('input',()=>{ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,160)+'px';document.getElementById('send').disabled=!ta.value.trim()});
+estado(2);
+</script>
+</body>
+</html>

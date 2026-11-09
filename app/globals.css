@@ -30,6 +30,21 @@
   --warn-ink: #9a3412;
   --note-bg: #fff1bf;
   --note-ink: #6f4a00;
+  --ok-bg: #e1f2da; /* resultado guardado, nuevos al importar */
+  --ok-ink: #1f5a17;
+  /* Asistente (asistente-referencia.html) */
+  --glass-asistente: rgba(250, 252, 249, 0.92);
+  --blur-asistente: blur(26px) saturate(160%);
+  --shadow-asistente: 0 30px 70px -20px rgba(16, 48, 14, 0.45), inset 0 1px 0 #fff;
+  --shadow-burbuja: 0 8px 18px -10px rgba(33, 72, 32, 0.7);
+  --shadow-boton: 0 10px 20px -8px rgba(33, 72, 32, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  --shadow-icono: 0 8px 16px -8px rgba(33, 72, 32, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  --shadow-caja: var(--neu-out-sm), inset 0 0 0 1px rgba(33, 72, 32, 0.06);
+  --shadow-caja-foco: var(--neu-out-sm), 0 0 0 2px rgba(72, 167, 51, 0.6);
+  --shadow-punto: 0 0 0 3px rgba(72, 167, 51, 0.18);
+  --velo: rgba(16, 32, 14, 0.16);
+  --apagado: #d7ddd5; /* botón desactivado */
+  --r-asistente: 26px;
   --r-pane: 24px;
   --r-card: 18px;
   --r-ctl: 14px;
@@ -54,15 +69,28 @@
   --color-note: var(--note-bg);
   --color-note-ink: var(--note-ink);
   --color-linea: rgba(33, 72, 32, 0.08); /* divisores finos dentro de tarjetas */
+  --color-ok: var(--ok-bg);
+  --color-ok-ink: var(--ok-ink);
+  --color-asistente: var(--glass-asistente);
+  --color-velo: var(--velo);
+  --color-apagado: var(--apagado);
 
   --radius-pane: var(--r-pane);
   --radius-card: var(--r-card);
   --radius-ctl: var(--r-ctl);
+  --radius-asistente: var(--r-asistente);
 
   --shadow-vidrio: var(--shadow);
   --shadow-neu-out: var(--neu-out);
   --shadow-neu-out-sm: var(--neu-out-sm);
   --shadow-neu-in: var(--neu-in);
+  --shadow-asistente: var(--shadow-asistente);
+  --shadow-burbuja: var(--shadow-burbuja);
+  --shadow-boton: var(--shadow-boton);
+  --shadow-icono: var(--shadow-icono);
+  --shadow-caja: var(--shadow-caja);
+  --shadow-caja-foco: var(--shadow-caja-foco);
+  --shadow-punto: var(--shadow-punto);
 
   --font-sans: var(--font-poppins);
 }
@@ -76,6 +104,34 @@
    Si se escriben las dos, el minificador deja solo la -webkit- y Chrome no la aplica.) */
 @utility backdrop-vidrio {
   backdrop-filter: var(--blur);
+}
+@utility backdrop-asistente {
+  backdrop-filter: var(--blur-asistente);
+}
+
+/* Asistente: "escribiendo" (3 puntos). Sin movimiento si se pide reducirlo (regla de abajo). */
+@keyframes escribiendo {
+  0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-3px); }
+}
+.escribiendo i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--brand-2);
+  opacity: 0.4;
+  animation: escribiendo 1.2s infinite;
+}
+.escribiendo i:nth-child(2) { animation-delay: 0.15s; }
+.escribiendo i:nth-child(3) { animation-delay: 0.3s; }
+/* Cuadro de texto del asistente: el foco lo marca la caja que lo rodea. */
+.sin-anillo,
+.sin-anillo:focus-visible {
+  outline: none;
+}
+.asistente-cuerpo {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(33, 72, 32, 0.2) transparent;
 }
 
 /* ---------- base ---------- */

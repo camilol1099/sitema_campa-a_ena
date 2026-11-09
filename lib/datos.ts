@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { CATALOGOS, type Catalogo, type Catalogos } from "./catalogos";
+import { NOMBRE_SIN_LIDER } from "./sin-lider";
 import type { TipoReferente } from "./ejes";
 import type {
   CifrasEje,
@@ -56,7 +57,7 @@ export async function referente(id: string): Promise<ReferenteFicha | null> {
     await supabase
       .from("referentes")
       .select(
-        "id,tipo,nombre,cedula,barrio,municipio,empresa,zona_influencia",
+        "id,tipo,nombre,cedula,barrio,municipio,puesto_votacion,mesa,municipio_verificacion,coordinador,empresa,zona_influencia",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -182,3 +183,83 @@ export async function panelCalidad(): Promise<PanelCalidad> {
       .single(),
   );
 }
+
+// ---------- Panel de Revisión ----------
+// Personas que el sistema no sabe resolver solo: sin líder (con "Sin líder
+// asignado"), cédula fuera de la regla (6 a 10 dígitos) y cédula repetida en el
+// Excel (quedaron sin cédula y con una observación). Ella las corrige ahí mismo.
+export type PersonaRevision = {
+  id: string;
+  nombre: string;
+  cedula: string | null;
+  celular: string | null;
+  direccion: string | null;
+  barrio: string | null;
+  observaciones: string | null;
+  referentes: { id: string; nombre: string }[];
+};
+export type Revision = {
+  sinLiderId: string | null;
+  sinLider: PersonaRevision[];
+  cedulaInvalida: PersonaRevision[];
+  repetidaExcel: PersonaRevision[];
+};
+
+const COLUMNAS_REVISION = "id,nombre,cedula,celular,direccion,barrio,observaciones";
+/** Marca que dejó la importación del Excel cuando la cédula estaba repetida. */
+export const MARCA_REPETIDA = "Cédula % repetida en el Excel%";
+
+export const revision = cache(async (): Promise<Revision> => {
+  const supabase = await crearClienteServidor();
+  const { data: sl } = await supabase
+    .from("referentes")
+    .select("id")
+    .eq("tipo", "lider")
+    .eq("nombre", NOMBRE_SIN_LIDER)
+    .limit(1)
+    .maybeSingle();
+  const sinLiderId = sl?.id ?? null;
+
+  const idsSinLider = sinLiderId
+    ? revisar<{ persona_id: string }[]>(
+        await supabase.from("vinculos").select("persona_id").eq("referente_id", sinLiderId).eq("activo", true).limit(1000),
+      ).map((v) => v.persona_id)
+    : [];
+
+  const [sinLider, cedulaInvalida, repetidaExcel] = await Promise.all([
+    idsSinLider.length
+      ? supabase.from("personas").select(COLUMNAS_REVISION).in("id", idsSinLider).order("nombre")
+      : Promise.resolve({ data: [], error: null }),
+    supabase
+      .from("personas")
+      .select(COLUMNAS_REVISION)
+      .not("cedula", "is", null)
+      .filter("cedula", "not.match", "^[0-9]{6,10}$")
+      .order("nombre")
+      .limit(500),
+    supabase.from("personas").select(COLUMNAS_REVISION).is("cedula", null).ilike("observaciones", MARCA_REPETIDA).order("nombre").limit(500),
+  ]);
+  const listas = [sinLider, cedulaInvalida, repetidaExcel].map((r) => revisar<Omit<PersonaRevision, "referentes">[]>(r));
+
+  // Líderes actuales de cada persona (para mostrarlos en la fila).
+  const ids = [...new Set(listas.flat().map((p) => p.id))];
+  const porPersona = new Map<string, { id: string; nombre: string }[]>();
+  if (ids.length) {
+    const vinculos = revisar(
+      await supabase
+        .from("vinculos")
+        .select("persona_id,referente:referentes!inner(id,nombre)")
+        .in("persona_id", ids)
+        .eq("activo", true)
+        .overrideTypes<{ persona_id: string; referente: { id: string; nombre: string } }[], { merge: false }>(),
+    );
+    for (const v of vinculos) porPersona.set(v.persona_id, [...(porPersona.get(v.persona_id) ?? []), v.referente]);
+  }
+  const conRefs = (xs: Omit<PersonaRevision, "referentes">[]) => xs.map((p) => ({ ...p, referentes: porPersona.get(p.id) ?? [] }));
+  return {
+    sinLiderId,
+    sinLider: conRefs(listas[0]!),
+    cedulaInvalida: conRefs(listas[1]!),
+    repetidaExcel: conRefs(listas[2]!),
+  };
+});

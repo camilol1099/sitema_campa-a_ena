@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { enteroOpcional, erroresCedula, textoOpcional, validarCedula } from '@/lib/validacion'
+import { enteroOpcional, erroresCedula, limpiarCedula, textoOpcional, validarCedula } from '@/lib/validacion'
 
 const fd = (datos: Record<string, string>) => {
   const f = new FormData()
@@ -18,30 +18,32 @@ describe('textoOpcional', () => {
   })
 })
 
-describe('validarCedula', () => {
+describe('limpiarCedula / validarCedula (única regla del sistema)', () => {
   it('sin cédula es válido (puede faltar)', () => {
     expect(validarCedula(null)).toBeNull()
+    expect(limpiarCedula('  ')).toEqual({ cedula: null, error: null, aviso: null })
   })
-  it('acepta solo dígitos entre 5 y 12', () => {
-    expect(validarCedula('12345')).toBeNull()
+  it('quita puntos, espacios, comas y apóstrofos', () => {
+    expect(limpiarCedula('1.065.821.234').cedula).toBe('1065821234')
+    expect(limpiarCedula("77'023.344").cedula).toBe('77023344')
+    expect(limpiarCedula(' 77 023 344 ').cedula).toBe('77023344')
+    expect(limpiarCedula('49,730,831').cedula).toBe('49730831')
+  })
+  it('solo dígitos', () => {
+    expect(validarCedula('12A456')).toMatch(/solo puede tener números/)
+    expect(validarCedula('-123456')).not.toBeNull()
+  })
+  it('entre 6 y 10 dígitos', () => {
+    expect(validarCedula('123456')).toBeNull()
     expect(validarCedula('1065100001')).toBeNull()
-    expect(validarCedula('123456789012')).toBeNull()
+    expect(validarCedula('12345')).toMatch(/entre 6 y 10/)
+    expect(validarCedula('10457122324')).toMatch(/entre 6 y 10/)
   })
-  it('rechaza letras', () => {
-    expect(validarCedula('12A45')).toMatch(/solo puede tener números/)
-  })
-  it('rechaza puntos, apóstrofos y espacios (formato del Excel: 77\'023.344)', () => {
-    expect(validarCedula("77'023.344")).toMatch(/solo puede tener números/)
-    expect(validarCedula('77.023.344')).toMatch(/solo puede tener números/)
-    expect(validarCedula('77 023 344')).toMatch(/solo puede tener números/)
-  })
-  it('rechaza negativos y decimales', () => {
-    expect(validarCedula('-12345')).not.toBeNull()
-    expect(validarCedula('12345.6')).not.toBeNull()
-  })
-  it('rechaza menos de 5 o más de 12 dígitos', () => {
-    expect(validarCedula('1234')).toMatch(/entre 5 y 12/)
-    expect(validarCedula('1234567890123')).toMatch(/entre 5 y 12/)
+  it('avisos: 9 dígitos que empiezan por 10 y 10 dígitos que empiezan por 19', () => {
+    expect(limpiarCedula('106582123').aviso).toMatch(/faltarle un dígito/)
+    expect(limpiarCedula('1965821234').aviso).toMatch(/19/)
+    expect(limpiarCedula('1065821234').aviso).toBeNull()
+    expect(limpiarCedula('49730831').aviso).toBeNull()
   })
 })
 

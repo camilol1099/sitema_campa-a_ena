@@ -1,6 +1,6 @@
 import { leerCatalogo, type Catalogo, type Catalogos } from "./catalogos";
 import { CAMPOS_TIPO, VERIFICACIONES, esUuid, type TipoReferente } from "./ejes";
-import { enteroOpcional, textoOpcional, validarCedula } from "./validacion";
+import { enteroOpcional, limpiarCedula, textoOpcional } from "./validacion";
 
 // Lectura y validación de los formularios. No tocan la base: las acciones del
 // servidor las usan y luego guardan. La base vuelve a validar (check y unique).
@@ -27,6 +27,15 @@ function leerCatalogos(formData: FormData, cats: Catalogo[], catalogos: Catalogo
 
 const MAX_TEXTO = 120;
 
+// Verificación del municipio: una opción de la lista o vacío (sin verificar).
+function leerVerificacion(formData: FormData, errores: Errores) {
+  const v = textoOpcional(formData.get("municipio_verificacion"));
+  if (v && !(VERIFICACIONES as readonly string[]).includes(v)) {
+    errores.municipio_verificacion = "Elige una opción de la lista.";
+  }
+  return v;
+}
+
 // Formulario de referente: campos comunes + solo los campos propios de su tipo.
 export function leerReferente(
   formData: FormData,
@@ -36,10 +45,16 @@ export function leerReferente(
   const errores: Errores = {};
   const nombre = textoOpcional(formData.get("nombre"));
   if (!nombre) errores.nombre = "Escribe el nombre.";
-  const cedula = textoOpcional(formData.get("cedula"));
-  const errCedula = validarCedula(cedula);
-  if (errCedula) errores.cedula = errCedula;
-  const { valores, nuevos } = leerCatalogos(formData, ["barrio", "municipio"], catalogos, errores);
+  // Se guarda limpia ("1.065.821.234" → "1065821234"); misma regla en todo el sistema.
+  const ced = limpiarCedula(textoOpcional(formData.get("cedula")));
+  if (ced.error) errores.cedula = ced.error;
+  const cedula = ced.cedula;
+  const mesa = enteroOpcional(formData.get("mesa"), 1);
+  if (mesa.error) errores.mesa = mesa.error;
+  const verificacion = leerVerificacion(formData, errores);
+  const coordinador = textoOpcional(formData.get("coordinador"));
+  if (coordinador && coordinador.length > MAX_TEXTO) errores.coordinador = `Coordinador: máximo ${MAX_TEXTO} letras.`;
+  const { valores, nuevos } = leerCatalogos(formData, ["barrio", "municipio", "puesto_votacion"], catalogos, errores);
 
   const fila: FilaReferente = {
     tipo,
@@ -49,6 +64,10 @@ export function leerReferente(
     direccion: textoOpcional(formData.get("direccion")),
     barrio: valores.barrio,
     municipio: valores.municipio,
+    puesto_votacion: valores.puesto_votacion,
+    mesa: mesa.valor,
+    municipio_verificacion: verificacion,
+    coordinador,
   };
   for (const { campo, etiqueta } of CAMPOS_TIPO[tipo]) {
     const t = textoOpcional(formData.get(campo));
@@ -90,16 +109,14 @@ export function leerPersona(
   const errores: Errores = {};
   const nombre = textoOpcional(formData.get("nombre"));
   if (!nombre) errores.nombre = "Escribe el nombre.";
-  const cedula = textoOpcional(formData.get("cedula"));
-  const errCedula = validarCedula(cedula);
-  if (errCedula) errores.cedula = errCedula;
+  // Se guarda limpia ("1.065.821.234" → "1065821234"); misma regla en todo el sistema.
+  const ced = limpiarCedula(textoOpcional(formData.get("cedula")));
+  if (ced.error) errores.cedula = ced.error;
+  const cedula = ced.cedula;
   const mesa = enteroOpcional(formData.get("mesa"), 1);
   if (mesa.error) errores.mesa = mesa.error;
 
-  const verificacion = textoOpcional(formData.get("municipio_verificacion"));
-  if (verificacion && !(VERIFICACIONES as readonly string[]).includes(verificacion)) {
-    errores.municipio_verificacion = "Elige una opción de la lista.";
-  }
+  const verificacion = leerVerificacion(formData, errores);
 
   const { valores, nuevos } = leerCatalogos(formData, ["barrio", "puesto_votacion"], catalogos, errores);
 

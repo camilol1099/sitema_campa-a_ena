@@ -2,6 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 const RUTAS_PUBLICAS = ["/login"];
+// Se atiende sin sesión: la tarea diaria que mantiene activa la base (se protege con CRON_SECRET).
+const RUTAS_ABIERTAS = ["/api/latido"];
 
 // Renueva la sesión en cada petición y manda al login a quien no tenga sesión.
 // Es solo la primera barrera (para la experiencia de uso): la protección real
@@ -39,7 +41,14 @@ export async function actualizarSesion(request: NextRequest) {
     (r) => ruta === r || ruta.startsWith(`${r}/`),
   );
 
+  if (RUTAS_ABIERTAS.includes(ruta)) return respuesta;
+
   if (!conSesion && !esPublica) {
+    // Las rutas de datos responden 401 (no una página de login): así el
+    // navegador puede avisar que la sesión venció.
+    if (ruta.startsWith("/api/")) {
+      return NextResponse.json({ error: "Su sesión venció. Recargue la página e inicie sesión de nuevo." }, { status: 401 });
+    }
     return redirigir(request, respuesta, "/login");
   }
   if (conSesion && esPublica) {

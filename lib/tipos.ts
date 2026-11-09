@@ -20,6 +20,11 @@ export type ReferenteFicha = {
   cedula: string | null;
   barrio: string | null;
   municipio: string | null;
+  // Votación y coordinador del propio referente.
+  puesto_votacion: string | null;
+  mesa: number | null;
+  municipio_verificacion: Verificacion | null;
+  coordinador: string | null;
 } & Record<CampoTipo, string | null>;
 
 // Para el formulario de edición sí se cargan celular y dirección.

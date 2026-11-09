@@ -48,6 +48,22 @@ describe('leerReferente', () => {
     expect(nuevos).toEqual([])
   })
 
+  it('guarda puesto, mesa, verificación y coordinador del referente', () => {
+    const { errores, fila } = leerReferente(
+      fd({ nombre: 'Ana', puesto_votacion: 'ie leonidas acuna', mesa: '7', municipio_verificacion: 'Errado', coordinador: ' Erika ' }),
+      'lider',
+      CAT,
+    )
+    expect(errores).toEqual({})
+    expect(fila).toMatchObject({ puesto_votacion: 'IE Leonidas Acuña', mesa: 7, municipio_verificacion: 'Errado', coordinador: 'Erika' })
+  })
+
+  it('referente: mesa y verificación no válidas', () => {
+    const { errores } = leerReferente(fd({ nombre: 'Ana', mesa: '0', municipio_verificacion: 'Otro' }), 'lider', CAT)
+    expect(errores).toHaveProperty('mesa')
+    expect(errores).toHaveProperty('municipio_verificacion')
+  })
+
   it('barrio que no está en la lista: error si no se pidió agregarlo', () => {
     const { errores } = leerReferente(fd({ nombre: 'Ana', barrio: 'Los Músicos' }), 'lider', CAT)
     expect(errores.barrio).toMatch(/de la lista/)

@@ -104,6 +104,22 @@ function Pie({
   );
 }
 
+// Verificación del municipio (persona y referente).
+function CampoVerificacion({ valor, error }: { valor?: string | null; error?: string }) {
+  return (
+    <Campo etiqueta="Verificación" error={error} ancho="completo">
+      <Seleccion name="municipio_verificacion" defaultValue={valor ?? ""}>
+        <option value="">Sin verificar</option>
+        {VERIFICACIONES.map((op) => (
+          <option key={op} value={op}>
+            {op === "Valledupar" ? "Vota en Valledupar" : op}
+          </option>
+        ))}
+      </Seleccion>
+    </Campo>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Referente (líder, empresario o aliado)
 // ---------------------------------------------------------------------------
@@ -126,7 +142,7 @@ export function FormReferente({
       avisar(referente ? "Cambios guardados" : `${nombreTipo(tipo)} creado`);
       if (!referente && r.href) router.push(r.href);
     },
-    validador(catalogos, ["barrio", "municipio"]),
+    validador(catalogos, ["barrio", "municipio", "puesto_votacion"]),
   );
   const v = referente;
 
@@ -152,6 +168,19 @@ export function FormReferente({
         </Campo>
         <Campo etiqueta="Municipio" error={errores.municipio}>
           <ListaCatalogo cat="municipio" defaultValue={v ? v.municipio : "Valledupar"} invalido={!!errores.municipio} />
+        </Campo>
+      </Seccion>
+
+      <Seccion titulo="Votación">
+        <CampoVerificacion valor={v?.municipio_verificacion} error={errores.municipio_verificacion} />
+        <Campo etiqueta="Puesto de votación" error={errores.puesto_votacion}>
+          <ListaCatalogo cat="puesto_votacion" defaultValue={v?.puesto_votacion} invalido={!!errores.puesto_votacion} />
+        </Campo>
+        <Campo etiqueta="Mesa" error={errores.mesa}>
+          <Texto name="mesa" defaultValue={v?.mesa ?? ""} inputMode="numeric" invalido={!!errores.mesa} />
+        </Campo>
+        <Campo etiqueta="Coordinador" error={errores.coordinador} ancho="completo">
+          <Texto name="coordinador" defaultValue={v?.coordinador ?? ""} maxLength={120} invalido={!!errores.coordinador} />
         </Campo>
       </Seccion>
 
@@ -239,16 +268,7 @@ export function FormPersona({
       </Seccion>
 
       <Seccion titulo="Votación">
-        <Campo etiqueta="Verificación" error={errores.municipio_verificacion} ancho="completo">
-          <Seleccion name="municipio_verificacion" defaultValue={v?.municipio_verificacion ?? ""}>
-            <option value="">Sin verificar</option>
-            {VERIFICACIONES.map((op) => (
-              <option key={op} value={op}>
-                {op === "Valledupar" ? "Vota en Valledupar" : op}
-              </option>
-            ))}
-          </Seleccion>
-        </Campo>
+        <CampoVerificacion valor={v?.municipio_verificacion} error={errores.municipio_verificacion} />
         <Campo etiqueta="Puesto de votación" error={errores.puesto_votacion}>
           <ListaCatalogo cat="puesto_votacion" defaultValue={v?.puesto_votacion} invalido={!!errores.puesto_votacion} />
         </Campo>

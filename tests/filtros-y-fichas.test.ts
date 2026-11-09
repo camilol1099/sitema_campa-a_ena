@@ -66,7 +66,14 @@ describe('ficha corta del referente', () => {
   const base: ReferenteFicha = {
     id: '1', tipo: 'lider', nombre: 'Rosa', cedula: '1065100001', barrio: 'Fundadores', municipio: 'Valledupar',
     empresa: null, zona_influencia: null,
+    puesto_votacion: 'IE Leonidas Acuña', mesa: 12, municipio_verificacion: 'Valledupar', coordinador: 'Erika',
   }
+  const votacion = [
+    ['Puesto de votación', 'IE Leonidas Acuña'],
+    ['Mesa', '12'],
+    ['Verificación', 'Vota en Valledupar'],
+    ['Su coordinador', 'Erika'],
+  ]
 
   it('coordinadoresDistintos: sin repetidos ni vacíos', () => {
     expect(
@@ -74,25 +81,37 @@ describe('ficha corta del referente', () => {
     ).toEqual(['Paola', 'Elvis'])
   })
 
-  it('líder → barrio, coordinadores', () => {
+  it('líder → barrio, coordinadores y votación', () => {
     expect(datosFichaReferente(base, ['Paola', 'Elvis'])).toEqual([
       ['Barrio', 'Fundadores'],
       ['Coordinadores', '2'],
+      ...votacion,
     ])
     expect(datosFichaReferente(base, [])).toEqual([
       ['Barrio', 'Fundadores'],
       ['Coordinadores', null],
+      ...votacion,
+    ])
+  })
+
+  it('sin datos de votación → vacíos y "Sin verificar"', () => {
+    const r = { ...base, puesto_votacion: null, mesa: null, municipio_verificacion: null, coordinador: null }
+    expect(datosFichaReferente(r, []).slice(2)).toEqual([
+      ['Puesto de votación', null],
+      ['Mesa', null],
+      ['Verificación', 'Sin verificar'],
+      ['Su coordinador', null],
     ])
   })
 
   it('empresario → empresa', () => {
     const r = { ...base, tipo: 'empresario' as const, empresa: 'Clínica Sonrisa' }
-    expect(datosFichaReferente(r, [])).toEqual([['Empresa', 'Clínica Sonrisa']])
+    expect(datosFichaReferente(r, [])).toEqual([['Empresa', 'Clínica Sonrisa'], ...votacion])
   })
 
   it('aliado → zona', () => {
     const r = { ...base, tipo: 'aliado' as const, zona_influencia: 'Comuna 5' }
-    expect(datosFichaReferente(r, [])).toEqual([['Zona de influencia', 'Comuna 5']])
+    expect(datosFichaReferente(r, [])).toEqual([['Zona de influencia', 'Comuna 5'], ...votacion])
   })
 
   it('nunca muestra dirección ni teléfono, aunque vengan en el objeto', () => {
