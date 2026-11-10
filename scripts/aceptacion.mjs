@@ -8,7 +8,8 @@
 // - Usa la base configurada en .env.local (la real): crea registros de prueba
 //   ("Prueba Aceptacion …", cédulas 91003xxxxx) y los borra al final. Queda el
 //   rastro normal en el historial.
-// - Las pruebas F llaman al asistente (gastan unos pocos tokens).
+// - Las pruebas F llaman al asistente (gastan unos pocos tokens). Para gastar menos:
+//   OMITIR=F6,F7,F8,F9 (las de importar Excel).
 // - Navegador: Edge instalado (cambiar con NAVEGADOR=chrome). Capturas de fallas en data/capturas/.
 import { existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -37,7 +38,13 @@ const CED_SUELTA = "9100300003";
 const resultados = [];
 const erroresConsola = [];
 let actual = "";
+// OMITIR=F6,F7,F8,F9 salta esas pruebas (p. ej. para gastar menos tokens del asistente).
+const OMITIR = new Set((process.env.OMITIR ?? "").split(",").map((s) => s.trim()).filter(Boolean));
 async function prueba(id, nombre, fn, page) {
+  if (OMITIR.has(id)) {
+    console.log(`  – ${id} ${nombre} — omitida`);
+    return;
+  }
   actual = id;
   const t = Date.now();
   try {
@@ -486,6 +493,30 @@ console.log("\nA. Acceso y seguridad");
     await page.goto(`${BASE}/lideres?referente=no-es-un-id&persona=tampoco`);
     await quieta(page);
     afirmar(await page.getByText("Elija un referente para ver sus personas.").isVisible(), "un id inválido rompe la página");
+  }, page);
+
+  await prueba("E6", "Copia de seguridad: descarga las 3 tablas completas en CSV", async () => {
+    const sinSesion = await fetch(`${BASE}/api/exportar?tabla=personas`);
+    afirmar(sinSesion.status === 401, `sin sesión responde ${sinSesion.status}`);
+    const filas = {};
+    for (const tabla of ["personas", "referentes", "vinculos"]) {
+      const r = await page.request.get(`${BASE}/api/exportar?tabla=${tabla}`);
+      afirmar(r.ok(), `${tabla}: HTTP ${r.status()}`);
+      afirmar(/attachment; filename="copia-/.test(r.headers()["content-disposition"] ?? ""), `${tabla}: no se descarga como archivo`);
+      const texto = await r.text();
+      afirmar(texto.startsWith("﻿"), `${tabla}: sin BOM`);
+      // Filas = registros (las observaciones pueden tener saltos de línea entre comillas).
+      const registros = texto.replace(/"(?:[^"]|"")*"/g, "").trimEnd().split("\r\n").length - 1;
+      const enBase = await contar(tabla);
+      afirmar(registros === enBase, `${tabla}: ${registros} filas, la base tiene ${enBase}`);
+      if (tabla === "personas") afirmar(texto.includes(CED_PERSONA) && texto.includes(LIDER), "personas: falta la de prueba con su líder");
+      filas[tabla] = registros;
+    }
+    // El menú de la cuenta ofrece la copia.
+    await page.getByRole("button", { name: "Menú de la cuenta" }).click();
+    afirmar(await page.getByRole("button", { name: "Descargar las 3" }).isVisible(), "el menú no muestra la copia");
+    await page.keyboard.press("Escape");
+    return Object.entries(filas).map(([k, v]) => `${k} ${v}`).join(" · ");
   }, page);
 
   // =====================================================================

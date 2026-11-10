@@ -219,6 +219,46 @@ function Buscador({ referentes }: { referentes: RefBusqueda[] }) {
   );
 }
 
+const ARCHIVOS_COPIA = [
+  { tabla: "personas", nombre: "Personas" },
+  { tabla: "referentes", nombre: "Líderes" },
+  { tabla: "vinculos", nombre: "Vínculos" },
+] as const;
+
+/** Copia de seguridad: descarga cada tabla en CSV (app/api/exportar). */
+function CopiaSeguridad() {
+  const [bajando, setBajando] = useState(false);
+
+  const todas = async () => {
+    setBajando(true);
+    for (const { tabla } of ARCHIVOS_COPIA) {
+      const a = document.createElement("a");
+      a.href = `/api/exportar?tabla=${tabla}`;
+      a.download = "";
+      a.click();
+      await new Promise((r) => setTimeout(r, 1200));
+    }
+    setBajando(false);
+  };
+
+  return (
+    <div className="my-1.5 border-y border-linea px-2 py-2">
+      <p className="text-[13px] font-semibold text-ink">Copia de seguridad</p>
+      <p className="text-[12px] text-muted">Archivos CSV que abren en Excel.</p>
+      <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[13px]">
+        {ARCHIVOS_COPIA.map(({ tabla, nombre }) => (
+          <a key={tabla} href={`/api/exportar?tabla=${tabla}`} download className="font-medium text-brand underline-offset-2 hover:underline">
+            {nombre}
+          </a>
+        ))}
+      </div>
+      <Boton type="button" tam="sm" className="mt-2 w-full" onClick={todas} disabled={bajando}>
+        {bajando ? "Descargando…" : "Descargar las 3"}
+      </Boton>
+    </div>
+  );
+}
+
 function MenuUsuario({ correo }: { correo: string }) {
   const [abierto, setAbierto] = useState(false);
   const caja = useRef<HTMLDivElement>(null);
@@ -251,6 +291,7 @@ function MenuUsuario({ correo }: { correo: string }) {
       {abierto && (
         <div className="aparecer absolute right-0 z-20 mt-2 w-64 rounded-card border border-glass-line bg-glass-strong p-2.5 shadow-vidrio backdrop-vidrio">
           <p className="truncate px-2 py-1 text-[13px] text-muted">{correo}</p>
+          <CopiaSeguridad />
           <form action={cerrarSesion}>
             <Boton type="submit" tam="sm" className="mt-1 w-full">
               Cerrar sesión

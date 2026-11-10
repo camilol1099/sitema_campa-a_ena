@@ -152,6 +152,15 @@ autorizaron el tratamiento de datos. Por ahora solo líderes y sus personas (sin
   contra la app en `localhost:3107` (o la URL que se le pase). Crean y borran registros "Prueba Aceptacion …"
   (cédulas 91003…) en la base real y dejan rastro en el historial. Correrlas antes de cada despliegue.
 
+## Copia de seguridad en CSV (desde el 2026-11-09)
+
+- Menú de la cuenta → "Copia de seguridad": descarga `personas`, `referentes` y `vinculos` (o las 3) desde
+  `app/api/exportar/route.ts` (`?tabla=`). Sesión + `soy_admin()`, RLS; todas las filas de a 1000.
+- `lib/csv.ts`: separador `;`, BOM UTF-8 (abre bien en Excel en español), y apóstrofo delante de textos que
+  empiezan por `=`, `@` o `+`/`-` sin ser número (contra fórmulas). Columnas extra para leerlo sin cruzar tablas:
+  personas → `referentes_activos`, `coordinadores`; vínculos → nombres y cédula.
+- Los archivos tienen datos personales (Ley 1581): guardarlos en un lugar seguro, nunca en git.
+
 ## Asistente de IA (desde el 2026-11-06)
 
 - Botón "Asistente" en la barra superior → panel de vidrio (`components/asistente.tsx`). La conversación no se guarda.
