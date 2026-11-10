@@ -128,8 +128,9 @@ console.log("\nA. Acceso y seguridad");
     afirmar(r.status() === 200, `respondió ${r.status()}`);
     const j = await r.json();
     afirmar(j.ok === true && !Number.isNaN(Date.parse(j.hora)), `respuesta: ${JSON.stringify(j)}`);
-    afirmar(Object.keys(j).sort().join() === "hora,ok", "devuelve más de lo necesario");
-    return `la base respondió ${j.hora}`;
+    afirmar(Object.keys(j).sort().join() === "consultas,hora,ok", "devuelve más de lo necesario");
+    afirmar(j.consultas === 3, `hizo ${j.consultas} consultas`);
+    return `${j.consultas} consultas; la base respondió ${j.hora}`;
   });
 
   await prueba("A3", "Sin sesión, la base no entrega ni acepta datos", async () => {

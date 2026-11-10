@@ -144,7 +144,7 @@ autorizaron el tratamiento de datos. Por ahora solo líderes y sus personas (sin
 
 - **Vercel** (`vercel.json`): región `gru1` (São Paulo, junto a la base de Supabase en `sa-east-1`).
   Variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `ANTHROPIC_API_KEY`, `CRON_SECRET`.
-- **Latido** (`/api/latido`, tarea diaria en `vercel.json` → `crons`): llama a `public.latido()` (solo devuelve la
+- **Latido** (`/api/latido`, tarea diaria en `vercel.json` → `crons`): llama 3 veces a `public.latido()` (solo devuelve la
   hora) para que Supabase no pause el proyecto por 7 días sin uso. Es la única ruta sin sesión; si existe
   `CRON_SECRET`, exige `Authorization: Bearer <CRON_SECRET>` (Vercel lo envía solo).
 - Sin sesión, las rutas `/api/*` responden 401 con un mensaje (no redirigen al login).
