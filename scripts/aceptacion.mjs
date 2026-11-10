@@ -683,6 +683,60 @@ console.log("\nA. Acceso y seguridad");
   }
 
   // =====================================================================
+  console.log("\nJ. Eliminar");
+  {
+    // Registros propios: un líder con dos personas, una solo con él y otra también con LIDER.
+    const { data: lb } = await sb.from("referentes").insert({ tipo: "lider", nombre: "Prueba Aceptacion Borrar Lider", cedula: "9100300011" }).select("id").single();
+    const { data: ps } = await sb.from("personas").insert([
+      { nombre: "Prueba Aceptacion Borrar Sola", cedula: "9100300012" },
+      { nombre: "Prueba Aceptacion Borrar Doble", cedula: "9100300013" },
+    ]).select("id,nombre");
+    const sola = ps.find((p) => p.nombre.endsWith("Sola")).id;
+    const doble = ps.find((p) => p.nombre.endsWith("Doble")).id;
+    await sb.from("vinculos").insert([
+      { persona_id: sola, referente_id: lb.id },
+      { persona_id: doble, referente_id: lb.id },
+      { persona_id: doble, referente_id: liderId },
+    ]);
+
+    await prueba("J1", "Eliminar líder: avisa cuántas personas pasan a «Sin líder asignado» y las mueve", async () => {
+      await page.goto(`${BASE}/lideres?referente=${lb.id}`);
+      await quieta(page);
+      await page.getByRole("button", { name: "Eliminar líder" }).click();
+      await dialogo.getByText(/Tiene 2 personas\. 1 quedará en «Sin líder asignado»/).waitFor();
+      await dialogo.getByRole("button", { name: "Sí, borrar" }).click();
+      await page.waitForURL((u) => !u.search.includes(lb.id));
+      afirmar((await sb.from("referentes").select("id").eq("id", lb.id)).data.length === 0, "el líder sigue en la base");
+      const { data: vs } = await sb.from("vinculos").select("persona_id,referente:referentes!inner(nombre)").in("persona_id", [sola, doble]).eq("activo", true);
+      afirmar(vs.length === 2, `vínculos activos: ${JSON.stringify(vs)}`);
+      afirmar(vs.find((v) => v.persona_id === sola)?.referente.nombre === "Sin líder asignado", "la persona sola no quedó en «Sin líder asignado»");
+      afirmar(vs.find((v) => v.persona_id === doble)?.referente.nombre === LIDER, "la persona con otro líder no se quedó con él");
+      const { data: h } = await sb.from("historial").select("accion,cambios").eq("tabla", "referentes").eq("registro_id", lb.id).eq("accion", "eliminar");
+      afirmar(h.length === 1 && h[0].cambios?.antes?.nombre === "Prueba Aceptacion Borrar Lider", "el historial no guardó la copia");
+    }, page);
+
+    await prueba("J2", "Eliminar persona: pide confirmar, la borra y vuelve a la lista", async () => {
+      await page.goto(`${BASE}/lideres?referente=${liderId}&persona=${doble}`);
+      await quieta(page);
+      await page.locator(".panel-ficha").getByRole("button", { name: "Eliminar" }).click();
+      await dialogo.getByRole("button", { name: "Cancelar" }).click();
+      afirmar((await sb.from("personas").select("id").eq("id", doble)).data.length === 1, "borró al cancelar");
+      await page.locator(".panel-ficha").getByRole("button", { name: "Eliminar" }).click();
+      await dialogo.getByRole("button", { name: "Sí, borrar" }).click();
+      await page.waitForURL((u) => !u.search.includes("persona="));
+      afirmar((await sb.from("personas").select("id").eq("id", doble)).data.length === 0, "la persona sigue en la base");
+      afirmar((await sb.from("vinculos").select("id").eq("persona_id", doble)).data.length === 0, "quedaron sus vínculos");
+    }, page);
+
+    await prueba("J3", "«Sin líder asignado» no se puede eliminar", async () => {
+      const { data: sl } = await sb.from("referentes").select("id").eq("nombre", "Sin líder asignado").single();
+      await page.goto(`${BASE}/lideres?referente=${sl.id}`);
+      await quieta(page);
+      afirmar(!(await page.getByRole("button", { name: "Eliminar líder" }).isVisible()), "ofrece eliminarlo");
+    }, page);
+  }
+
+  // =====================================================================
   console.log("\nH. Cierre de sesión");
   await prueba("H1", "Cerrar sesión y no poder volver sin entrar de nuevo", async () => {
     await page.goto(`${BASE}/panel`);

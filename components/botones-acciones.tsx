@@ -1,12 +1,16 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition, type FormEvent } from "react";
+import { useEffect, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import {
   datosReferenteParaEditar,
+  eliminarPersona,
+  eliminarReferente,
+  personasQueQuedanSinReferente,
   vincularPersona,
   type Resultado,
 } from "@/app/(privado)/acciones";
+import { NOMBRE_SIN_LIDER } from "@/lib/sin-lider";
 import { EJES, nombreTipo, slugDeTipo, type TipoReferente } from "@/lib/ejes";
 import { crearClienteNavegador } from "@/lib/supabase/client";
 import type {
@@ -115,6 +119,148 @@ export function BotonEditarPersona({ persona }: { persona: Persona }) {
       <Dialogo abierto={abierto} alCerrar={() => setAbierto(false)} titulo="Editar persona" ancho="lg">
         <FormPersona persona={persona} alCerrar={() => setAbierto(false)} />
       </Dialogo>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Eliminar (con confirmación; el historial guarda una copia de lo borrado)
+// ---------------------------------------------------------------------------
+const claseEliminar =
+  "inline-flex cursor-pointer items-center gap-1.5 rounded-[10px] px-2.5 py-1.5 text-[13px] font-semibold text-warn-ink transition hover:bg-warn disabled:opacity-50";
+
+function ConfirmarEliminar({
+  abierto,
+  alCerrar,
+  titulo,
+  children,
+  listo,
+  alConfirmar,
+}: {
+  abierto: boolean;
+  alCerrar: () => void;
+  titulo: string;
+  children: ReactNode;
+  listo: boolean;
+  alConfirmar: () => Promise<Resultado>;
+}) {
+  const [error, setError] = useState<string | null>(null);
+  const [borrando, iniciar] = useTransition();
+  const cerrar = () => {
+    setError(null);
+    alCerrar();
+  };
+  return (
+    <Dialogo abierto={abierto} alCerrar={cerrar} titulo={titulo}>
+      <div className="flex flex-col gap-3 text-[14px]">
+        {children}
+        <p className="text-muted">No se puede deshacer desde el sistema; queda una copia en el historial.</p>
+        {error && <Aviso>{error}</Aviso>}
+        <div className="mt-1 flex justify-end gap-2 border-t border-linea pt-4">
+          <button type="button" onClick={cerrar} className={claseBoton("sec")}>
+            Cancelar
+          </button>
+          <button
+            type="button"
+            disabled={borrando || !listo}
+            className="inline-flex h-[42px] cursor-pointer items-center rounded-ctl bg-accent px-4 font-semibold text-white shadow-neu-out-sm transition hover:brightness-95 disabled:opacity-50"
+            onClick={() =>
+              iniciar(async () => {
+                const r = await alConfirmar();
+                if (!r.ok) setError(r.mensaje ?? "No se pudo borrar. Intente de nuevo.");
+              })
+            }
+          >
+            {borrando ? "Borrando..." : "Sí, borrar"}
+          </button>
+        </div>
+      </div>
+    </Dialogo>
+  );
+}
+
+export function BotonEliminarPersona({ id, nombre, volver }: { id: string; nombre: string; volver: string }) {
+  const [abierto, setAbierto] = useState(false);
+  const router = useRouter();
+  const avisar = useToast();
+  return (
+    <>
+      <button type="button" className={claseEliminar} onClick={() => setAbierto(true)}>
+        Eliminar
+      </button>
+      <ConfirmarEliminar
+        abierto={abierto}
+        alCerrar={() => setAbierto(false)}
+        titulo={`¿Borrar a ${nombre}?`}
+        listo
+        alConfirmar={async () => {
+          const r = await eliminarPersona(id);
+          if (r.ok) {
+            setAbierto(false);
+            avisar(`${nombre}: borrada`);
+            router.push(volver);
+          }
+          return r;
+        }}
+      >
+        <p>Se borran sus datos y sus vínculos con líderes, empresarios o aliados.</p>
+      </ConfirmarEliminar>
+    </>
+  );
+}
+
+export function BotonEliminarReferente({ id, nombre, tipo }: { id: string; nombre: string; tipo: TipoReferente }) {
+  const [abierto, setAbierto] = useState(false);
+  const [conteo, setConteo] = useState<{ total: number; solas: number } | null>(null);
+  const [cargando, iniciar] = useTransition();
+  const router = useRouter();
+  const avisar = useToast();
+  const uno = EJES[slugDeTipo(tipo)].uno;
+  if (tipo === "lider" && nombre === NOMBRE_SIN_LIDER) return null;
+
+  function abrir() {
+    setAbierto(true);
+    setConteo(null);
+    iniciar(async () => setConteo(await personasQueQuedanSinReferente(id)));
+  }
+
+  return (
+    <>
+      <button type="button" className={claseEliminar} onClick={abrir}>
+        Eliminar {uno}
+      </button>
+      <ConfirmarEliminar
+        abierto={abierto}
+        alCerrar={() => setAbierto(false)}
+        titulo={`¿Borrar a ${nombre}?`}
+        listo={!cargando && conteo !== null}
+        alConfirmar={async () => {
+          const r = await eliminarReferente(id);
+          if (r.ok) {
+            setAbierto(false);
+            avisar(`${nombre}: borrado${r.mensaje ? `. ${r.mensaje}` : ""}`);
+            router.push(r.href ?? "/");
+          }
+          return r;
+        }}
+      >
+        <p>Se borra el {uno} y sus vínculos. <b>Sus personas no se borran.</b></p>
+        {cargando || !conteo ? (
+          <p className="text-muted">Revisando sus personas...</p>
+        ) : conteo.total === 0 ? (
+          <p>No tiene personas vinculadas.</p>
+        ) : (
+          <Aviso tono="nota">
+            Tiene {conteo.total} {conteo.total === 1 ? "persona" : "personas"}.{" "}
+            {conteo.solas > 0
+              ? conteo.solas === conteo.total
+                ? `${conteo.total === 1 ? "Quedará" : "Todas quedarán"} en «${NOMBRE_SIN_LIDER}» (la${conteo.total === 1 ? "" : "s"} verá en Revisión)`
+                : `${conteo.solas} ${conteo.solas === 1 ? "quedará" : "quedarán"} en «${NOMBRE_SIN_LIDER}» (la${conteo.solas === 1 ? "" : "s"} verá en Revisión)`
+              : "Todas siguen con otro referente"}
+            {conteo.solas > 0 && conteo.solas < conteo.total ? "; las demás siguen con su otro referente." : "."}
+          </Aviso>
+        )}
+      </ConfirmarEliminar>
     </>
   );
 }

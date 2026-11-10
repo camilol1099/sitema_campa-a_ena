@@ -156,6 +156,14 @@ autorizaron el tratamiento de datos. Por ahora solo líderes y sus personas (sin
   contra la app en `localhost:3107` (o la URL que se le pase). Crean y borran registros "Prueba Aceptacion …"
   (cédulas 91003…) en la base real y dejan rastro en el historial. Correrlas antes de cada despliegue.
 
+## Eliminar registros (desde el 2026-11-10)
+
+- Botón "Eliminar" en la ficha de la persona y "Eliminar líder/empresario/aliado" en la ficha del referente,
+  con confirmación (`eliminarPersona`, `eliminarReferente` en `app/(privado)/acciones.ts`).
+- Al borrar un referente **sus personas no se borran**: las que no tienen otro referente activo pasan a
+  "Sin líder asignado" (la confirmación dice cuántas). "Sin líder asignado" no se puede borrar.
+- El trigger de historial guarda una copia completa de lo borrado (`accion = 'eliminar'`, `cambios.antes`).
+
 ## Copia de seguridad en CSV (desde el 2026-11-09)
 
 - Menú de la cuenta → "Copia de seguridad": descarga `personas`, `referentes` y `vinculos` (o las 3) desde

@@ -5,7 +5,7 @@ import { describirCambio } from "@/lib/historial";
 import { rutaPersona } from "@/lib/rutas";
 import { fecha, fechaConHora } from "@/lib/formato";
 import type { EventoHistorial, Persona, ReferenteResumen, VinculoDePersona } from "@/lib/tipos";
-import { BotonEditarPersona, BotonVincularAReferente } from "./botones-acciones";
+import { BotonEditarPersona, BotonEliminarPersona, BotonVincularAReferente } from "./botones-acciones";
 import { Guion, IconoVolver, Pildora, Vacio, claseBoton } from "./ui";
 
 // Bloque en tarjeta blanca en relieve, con título en mayúsculas pequeñas.
@@ -65,6 +65,7 @@ export default function FichaPersona({
         <div className="mt-3.5 flex flex-wrap gap-2.5">
           <BotonEditarPersona persona={p} />
           <BotonVincularAReferente personaId={p.id} vinculos={vinculos} referentes={referentes} />
+          <BotonEliminarPersona id={p.id} nombre={p.nombre} volver={volver} />
         </div>
       </div>
 

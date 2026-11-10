@@ -4,7 +4,7 @@ import { EJES, nombreTipo, type SlugEje } from "@/lib/ejes";
 import { coordinadoresDistintos, datosFichaReferente } from "@/lib/fichas";
 import { rutaPersona } from "@/lib/rutas";
 import type { PersonaDeReferente, ReferenteFicha, ReferenteResumen } from "@/lib/tipos";
-import { BotonEditarReferente, BotonVincularPersona } from "./botones-acciones";
+import { BotonEditarReferente, BotonEliminarReferente, BotonVincularPersona } from "./botones-acciones";
 import Pendiente from "./pendiente";
 import { Avatar, Guion, IconoVolver, Pildora, Vacio, claseBoton } from "./ui";
 
@@ -68,6 +68,9 @@ export default function PanelReferente({
         <div className="mt-4 flex justify-between text-[13px]">
           <span>Personas vinculadas</span>
           <b className="num font-bold">{n}</b>
+        </div>
+        <div className="mt-2 flex justify-end">
+          <BotonEliminarReferente id={r.id} nombre={r.nombre} tipo={r.tipo} />
         </div>
       </div>
 

@@ -4,7 +4,7 @@ import { refresh } from "next/cache";
 import { CATALOGOS } from "@/lib/catalogos";
 import { catalogos } from "@/lib/datos";
 import { crearClienteServidor } from "@/lib/supabase/server";
-import { EJES, esUuid, type TipoReferente } from "@/lib/ejes";
+import { EJES, esUuid, nombreTipo, slugDeTipo, type TipoReferente } from "@/lib/ejes";
 import { leerPersona, leerReferente, type Nuevo } from "@/lib/formularios";
 import { rutaPersona, rutaReferente } from "@/lib/rutas";
 import { NOMBRE_SIN_LIDER } from "@/lib/sin-lider";
@@ -371,7 +371,8 @@ export async function arreglarPersona(formData: FormData): Promise<Resultado> {
   return { ok: true };
 }
 
-// "Es la misma persona": se borra el registro repetido (queda en el historial).
+// Borra una persona y sus vínculos. El historial guarda una copia completa
+// (accion "eliminar", con los datos de antes).
 export async function eliminarPersona(id: string): Promise<Resultado> {
   if (!esUuid(id)) return { ok: false, mensaje: ERROR_GENERAL };
   const supabase = await crearClienteServidor();
@@ -379,4 +380,64 @@ export async function eliminarPersona(id: string): Promise<Resultado> {
   if (error) return { ok: false, mensaje: "No se pudo borrar. Intente de nuevo." };
   refresh();
   return { ok: true };
+}
+
+// Cuántas personas quedarían sin ningún referente si se borra este (para avisar
+// antes de confirmar). Las demás siguen con su otro referente.
+export async function personasQueQuedanSinReferente(id: string): Promise<{ total: number; solas: number } | null> {
+  if (!esUuid(id)) return null;
+  const supabase = await crearClienteServidor();
+  const { total, solas } = await personasDeReferente(supabase, id);
+  return total === null ? null : { total: total.length, solas: solas.length };
+}
+
+async function personasDeReferente(supabase: Supabase, id: string) {
+  const { data: suyos, error } = await supabase.from("vinculos").select("persona_id").eq("referente_id", id).eq("activo", true);
+  if (error) return { total: null, solas: [] as string[] };
+  const ids = [...new Set(suyos.map((v) => v.persona_id as string))];
+  const conOtro = new Set<string>();
+  for (let i = 0; i < ids.length; i += 200) {
+    const { data } = await supabase
+      .from("vinculos")
+      .select("persona_id")
+      .in("persona_id", ids.slice(i, i + 200))
+      .neq("referente_id", id)
+      .eq("activo", true);
+    for (const v of data ?? []) conOtro.add(v.persona_id as string);
+  }
+  return { total: ids, solas: ids.filter((p) => !conOtro.has(p)) };
+}
+
+// Borra un referente (líder, empresario o aliado). Sus personas NO se borran:
+// las que no tienen otro referente pasan a "Sin líder asignado" (nadie queda
+// sin líder). El historial guarda una copia completa del referente borrado.
+export async function eliminarReferente(id: string): Promise<Resultado> {
+  if (!esUuid(id)) return { ok: false, mensaje: ERROR_GENERAL };
+  const supabase = await crearClienteServidor();
+  const { data: ref } = await supabase.from("referentes").select("id,tipo,nombre").eq("id", id).maybeSingle();
+  if (!ref) return { ok: false, mensaje: "Este registro ya no existe." };
+  if (ref.tipo === "lider" && ref.nombre === NOMBRE_SIN_LIDER) {
+    return { ok: false, mensaje: `«${NOMBRE_SIN_LIDER}» no se puede borrar: ahí quedan las personas sin líder.` };
+  }
+
+  const { total, solas } = await personasDeReferente(supabase, id);
+  if (total === null) return { ok: false, mensaje: "No se pudo borrar. Intente de nuevo." };
+
+  if (solas.length) {
+    const sl = await idSinLider(supabase, true);
+    if (!sl) return { ok: false, mensaje: "No se pudo borrar. Intente de nuevo." };
+    // Si ya tuvo un vínculo (inactivo) con "Sin líder asignado", se reactiva; si no, se crea.
+    const { error } = await supabase
+      .from("vinculos")
+      .upsert(
+        solas.map((persona_id) => ({ persona_id, referente_id: sl, activo: true, nota: `Su ${nombreTipo(ref.tipo).toLowerCase()} ${ref.nombre} fue borrado` })),
+        { onConflict: "persona_id,referente_id" },
+      );
+    if (error) return { ok: false, mensaje: "No se pudo mover a sus personas a «Sin líder asignado». No se borró nada." };
+  }
+
+  const { error } = await supabase.from("referentes").delete().eq("id", id);
+  if (error) return { ok: false, mensaje: "No se pudo borrar. Intente de nuevo." };
+  refresh();
+  return { ok: true, href: `/${slugDeTipo(ref.tipo)}`, mensaje: solas.length ? `${solas.length} quedaron en «${NOMBRE_SIN_LIDER}».` : undefined };
 }
