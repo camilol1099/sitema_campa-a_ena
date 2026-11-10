@@ -144,9 +144,13 @@ autorizaron el tratamiento de datos. Por ahora solo líderes y sus personas (sin
 
 - **Vercel** (`vercel.json`): región `gru1` (São Paulo, junto a la base de Supabase en `sa-east-1`).
   Variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `ANTHROPIC_API_KEY`, `CRON_SECRET`.
-- **Latido** (`/api/latido`, tarea diaria en `vercel.json` → `crons`): llama 3 veces a `public.latido()` (solo devuelve la
+- **Latido** (`/api/latido`, Vercel **Schedules** en `vercel.json` → `schedules.latido`, cada 6 horas, hora de Bogotá;
+  desde el 2026-11-10 reemplaza a `crons`, no tener ambos): llama 3 veces a `public.latido()` (solo devuelve la
   hora) para que Supabase no pause el proyecto por 7 días sin uso. Es la única ruta sin sesión; si existe
   `CRON_SECRET`, exige `Authorization: Bearer <CRON_SECRET>` (Vercel lo envía solo).
+- **Límite del plan Hobby: 5.000 ejecuciones de Schedules al mes** (las automáticas y las de "Run Schedule" suman).
+  Cada 6 horas son ~124 al mes. No bajar de cada hora (~744) sin consultarlo; si se pasa, Vercel bloquea las
+  ejecuciones hasta el siguiente periodo.
 - Sin sesión, las rutas `/api/*` responden 401 con un mensaje (no redirigen al login).
 - **Pruebas de aceptación** (`scripts/aceptacion.mjs`, `npm run test:aceptacion`): 42 pruebas en un navegador real
   contra la app en `localhost:3107` (o la URL que se le pase). Crean y borran registros "Prueba Aceptacion …"

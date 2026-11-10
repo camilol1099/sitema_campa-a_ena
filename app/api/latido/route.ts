@@ -3,7 +3,7 @@ import { connection } from "next/server";
 
 // Latido: una consulta mínima a la base para que Supabase no pause el proyecto
 // por inactividad (en el plan gratuito se pausa tras 7 días sin uso).
-// Lo llama una tarea diaria de Vercel (vercel.json → crons). No lee ni escribe
+// Lo llama Vercel Schedules cada 6 horas (vercel.json → schedules.latido). No lee ni escribe
 // datos: solo pide la hora del servidor con la función pública `latido()`,
 // 3 veces por llamada (Supabase pide "unas pocas consultas a la base cada día").
 
